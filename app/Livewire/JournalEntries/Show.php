@@ -6,6 +6,7 @@ use App\Models\JournalEntry;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Show extends Component
@@ -35,7 +36,7 @@ class Show extends Component
         $this->journalEntry = $entry;
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.journal-entries.show', [
             'journalEntry' => $this->journalEntry,

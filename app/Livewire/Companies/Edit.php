@@ -3,7 +3,9 @@
 namespace App\Livewire\Companies;
 
 use App\Models\Company;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -54,6 +56,7 @@ class Edit extends Component
         $this->country = $company->country;
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -71,6 +74,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -99,7 +103,7 @@ class Edit extends Component
         $this->redirect(route('companies.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.companies.edit');
     }

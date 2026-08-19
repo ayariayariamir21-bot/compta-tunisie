@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Services\CurrentCompany;
 use App\Services\CustomerService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Index extends Component
@@ -71,7 +72,7 @@ class Index extends Component
         $this->redirect(route('customers.index'), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany)
+    public function render(CurrentCompany $currentCompany): View
     {
         $company = $currentCompany->get(Auth::user());
 

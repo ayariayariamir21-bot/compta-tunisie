@@ -7,7 +7,9 @@ use App\Models\Journal;
 use App\Services\Accounting\JournalService;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Create extends Component
@@ -20,6 +22,7 @@ class Create extends Component
 
     public bool $is_active = true;
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -30,6 +33,7 @@ class Create extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -70,7 +74,7 @@ class Create extends Component
         $this->redirect(route('journals.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.journals.create', [
             'journalTypes' => JournalType::cases(),

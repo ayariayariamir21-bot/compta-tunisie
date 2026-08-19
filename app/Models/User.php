@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -51,6 +53,8 @@ class User extends Authenticatable
 
     /**
      * Companies associated with this user.
+     *
+     * @return BelongsToMany<Company, $this>
      */
     public function companies(): BelongsToMany
     {
@@ -62,6 +66,9 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    /**
+     * @return HasMany<JournalEntry, $this>
+     */
     public function createdJournalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class, 'created_by');

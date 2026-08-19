@@ -7,7 +7,9 @@ use App\Models\Account;
 use App\Services\Accounting\AccountService;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -18,7 +20,7 @@ class Edit extends Component
 
     public string $name = '';
 
-    public ?AccountType $account_type = null;
+    public ?string $account_type = null;
 
     public ?int $parent_id = null;
 
@@ -54,6 +56,7 @@ class Edit extends Component
         $this->is_active = $account->is_active;
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -66,6 +69,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -112,7 +116,7 @@ class Edit extends Component
         $this->redirect(route('accounts.index'), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): View
     {
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = $currentFiscalYear->get(Auth::user());

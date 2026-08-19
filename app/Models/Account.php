@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AccountType;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Account extends Model
 {
+    /** @use HasFactory<Factory> */
     use HasFactory;
 
     protected $fillable = [
@@ -37,21 +39,33 @@ class Account extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Company, $this>
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * @return BelongsTo<FiscalYear, $this>
+     */
     public function fiscalYear(): BelongsTo
     {
         return $this->belongsTo(FiscalYear::class);
     }
 
+    /**
+     * @return BelongsTo<self, $this>
+     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'parent_id');
     }
 
+    /**
+     * @return HasMany<self, $this>
+     */
     public function children(): HasMany
     {
         return $this->hasMany(Account::class, 'parent_id');
@@ -77,11 +91,17 @@ class Account extends Model
         return false;
     }
 
+    /**
+     * @return HasMany<JournalEntryLine, $this>
+     */
     public function journalEntryLines(): HasMany
     {
         return $this->hasMany(JournalEntryLine::class);
     }
 
+    /**
+     * @return HasMany<Customer, $this>
+     */
     public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);

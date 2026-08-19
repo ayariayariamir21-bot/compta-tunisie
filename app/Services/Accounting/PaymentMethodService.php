@@ -12,6 +12,8 @@ class PaymentMethodService
     /**
      * Create a new payment method.
      *
+     * @param  array{code: string, name: string, type: string, is_active?: bool, is_default?: bool, sort_order?: int, description?: string|null}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function createPaymentMethod(Company $company, array $data): PaymentMethod
@@ -44,6 +46,8 @@ class PaymentMethodService
 
     /**
      * Update a payment method.
+     *
+     * @param  array{code: string, name: string, type: string, is_active?: bool, is_default?: bool, sort_order?: int, description?: string|null}  $data
      *
      * @throws \InvalidArgumentException
      */

@@ -4,10 +4,13 @@ namespace App\Livewire\Customers;
 
 use App\Enums\CustomerType;
 use App\Models\Account;
+use App\Models\Customer;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use App\Services\CustomerService;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Create extends Component
@@ -54,6 +57,7 @@ class Create extends Component
 
     public bool $isGenerated = false;
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -80,6 +84,7 @@ class Create extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -160,7 +165,7 @@ class Create extends Component
         $this->redirect(route('customers.index'), navigate: true);
     }
 
-    public function render(CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentFiscalYear $currentFiscalYear): View
     {
         $fiscalYear = $currentFiscalYear->get(Auth::user());
         $company = app(CurrentCompany::class)->get(Auth::user());

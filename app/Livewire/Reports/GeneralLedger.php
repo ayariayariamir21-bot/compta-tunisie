@@ -5,7 +5,9 @@ namespace App\Livewire\Reports;
 use App\Services\Accounting\GeneralLedgerService;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class GeneralLedger extends Component
@@ -26,12 +28,12 @@ class GeneralLedger extends Component
         $currentFiscalYear = app(CurrentFiscalYear::class)->get(Auth::user());
 
         if ($currentCompany && $currentFiscalYear) {
-            $this->fromDate = $currentFiscalYear->start_date->format('Y-m-d');
-            $this->toDate = $currentFiscalYear->end_date->format('Y-m-d');
+            $this->fromDate = Carbon::parse($currentFiscalYear->start_date)->format('Y-m-d');
+            $this->toDate = Carbon::parse($currentFiscalYear->end_date)->format('Y-m-d');
         }
     }
 
-    public function render(GeneralLedgerService $generalLedgerService, CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear)
+    public function render(GeneralLedgerService $generalLedgerService, CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): View
     {
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = $currentFiscalYear->get(Auth::user());

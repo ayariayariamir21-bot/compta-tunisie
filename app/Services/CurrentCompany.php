@@ -19,15 +19,17 @@ class CurrentCompany
                 ->wherePivot('is_active', true)
                 ->first();
 
-            if ($company) {
+            if ($company instanceof Company) {
                 return $company;
             }
         }
 
-        return $user->companies()
+        $company = $user->companies()
             ->wherePivot('is_active', true)
             ->orderBy('name')
             ->first();
+
+        return $company instanceof Company ? $company : null;
     }
 
     public function set(User $user, int $companyId): bool

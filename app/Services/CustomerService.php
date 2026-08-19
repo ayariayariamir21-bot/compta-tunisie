@@ -10,6 +10,8 @@ class CustomerService
     /**
      * Create a new customer.
      *
+     * @param  array{company_id: int, fiscal_year_id: int, code: string, name: string, customer_type?: string, tax_identifier?: string|null, account_id?: int|null, credit_limit?: string|null, is_active?: bool, legal_name?: string|null, rne?: string|null, address?: string|null, postal_code?: string|null, city?: string|null, governorate?: string|null, country?: string, phone?: string|null, mobile?: string|null, email?: string|null, website?: string|null, payment_terms_days?: int, notes?: string|null}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function createCustomer(array $data): Customer
@@ -17,8 +19,8 @@ class CustomerService
         $companyId = $data['company_id'];
         $this->validateCode($data['code'], $companyId);
 
-        if (isset($data['account_id']) && $data['account_id'] !== null) {
-            $this->validateAccount($data['account_id'], $companyId, $data['fiscal_year_id']);
+        if (isset($data['account_id'])) {
+            $this->validateAccount((int) $data['account_id'], $companyId, $data['fiscal_year_id']);
         }
 
         unset($data['fiscal_year_id']);
@@ -29,14 +31,16 @@ class CustomerService
     /**
      * Update a customer.
      *
+     * @param  array{company_id?: int, fiscal_year_id?: int, code: string, name: string, customer_type?: string, tax_identifier?: string|null, account_id?: int|null, credit_limit?: string|null, is_active?: bool, legal_name?: string|null, rne?: string|null, address?: string|null, postal_code?: string|null, city?: string|null, governorate?: string|null, country?: string, phone?: string|null, mobile?: string|null, email?: string|null, website?: string|null, payment_terms_days?: int, notes?: string|null}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function updateCustomer(Customer $customer, array $data): Customer
     {
         $this->validateCode($data['code'], $customer->company_id, $customer->id);
 
-        if (isset($data['account_id']) && $data['account_id'] !== null) {
-            $this->validateAccount($data['account_id'], $customer->company_id, $data['fiscal_year_id']);
+        if (isset($data['account_id'], $data['fiscal_year_id'])) {
+            $this->validateAccount((int) $data['account_id'], $customer->company_id, (int) $data['fiscal_year_id']);
         }
 
         unset($data['fiscal_year_id']);

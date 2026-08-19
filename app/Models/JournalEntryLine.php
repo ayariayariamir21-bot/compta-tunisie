@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,9 +12,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * Each line references one account and has either a debit or credit amount (never both).
  * Amounts use decimal(18,3) for TND millime precision.
+ *
+ * @property string $debit
+ * @property string $credit
  */
 class JournalEntryLine extends Model
 {
+    /** @use HasFactory<Factory> */
     use HasFactory;
 
     protected $fillable = [
@@ -32,11 +37,17 @@ class JournalEntryLine extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);

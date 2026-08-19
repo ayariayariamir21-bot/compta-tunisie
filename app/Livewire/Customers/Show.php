@@ -5,6 +5,7 @@ namespace App\Livewire\Customers;
 use App\Models\Customer;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Show extends Component
@@ -28,7 +29,7 @@ class Show extends Component
         $this->customer = $customer;
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.customers.show', [
             'customer' => $this->customer,

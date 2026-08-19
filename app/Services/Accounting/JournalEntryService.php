@@ -11,12 +11,33 @@ use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class JournalEntryService
 {
     /**
+     * Normalize a value to a numeric string with 3 decimal places.
+     *
+     *
+     * @return numeric-string
+     */
+    private function normalizeDecimal(string|int|float|null $value): string
+    {
+        if ($value === null || $value === '') {
+            return '0.000';
+        }
+
+        $numVal = is_numeric($value) ? (string) $value : '0.000';
+
+        return number_format((float) $numVal, 3, '.', '');
+    }
+
+    /**
      * Create a new draft journal entry with lines.
+     *
+     * @param  array{journal_id: int, entry_date: string, reference?: string, description?: string}  $data
+     * @param  list<array{account_id: int, description: string|null, debit: string, credit: string}>  $linesData
      *
      * @throws \InvalidArgumentException
      */
@@ -51,9 +72,9 @@ class JournalEntryService
                 JournalEntryLine::create([
                     'journal_entry_id' => $entry->id,
                     'account_id' => $line['account_id'],
-                    'description' => $line['description'] ?? null,
-                    'debit' => $line['debit'] ?? 0,
-                    'credit' => $line['credit'] ?? 0,
+                    'description' => $line['description'],
+                    'debit' => $line['debit'],
+                    'credit' => $line['credit'],
                 ]);
             }
 
@@ -65,6 +86,9 @@ class JournalEntryService
 
     /**
      * Update a draft journal entry and its lines.
+     *
+     * @param  array{journal_id: int, entry_date: string, reference?: string, description?: string}  $data
+     * @param  list<array{account_id: int, description: string|null, debit: string, credit: string}>  $linesData
      *
      * @throws \InvalidArgumentException
      */
@@ -93,9 +117,9 @@ class JournalEntryService
                 JournalEntryLine::create([
                     'journal_entry_id' => $entry->id,
                     'account_id' => $line['account_id'],
-                    'description' => $line['description'] ?? null,
-                    'debit' => $line['debit'] ?? 0,
-                    'credit' => $line['credit'] ?? 0,
+                    'description' => $line['description'],
+                    'debit' => $line['debit'],
+                    'credit' => $line['credit'],
                 ]);
             }
         });
@@ -229,15 +253,20 @@ class JournalEntryService
     {
         $date = Carbon::parse($entryDate);
 
-        if ($date->lt($period->start_date) || $date->gt($period->end_date)) {
+        $startDate = Carbon::parse($period->start_date);
+        $endDate = Carbon::parse($period->end_date);
+
+        if ($date->lt($startDate) || $date->gt($endDate)) {
             throw new \InvalidArgumentException(
-                "La date de l'écriture doit se situer dans la période « {$period->name} » ({$period->start_date->format('d/m/Y')} — {$period->end_date->format('d/m/Y')})."
+                "La date de l'écriture doit se situer dans la période « {$period->name} » ({$startDate->format('d/m/Y')} — {$endDate->format('d/m/Y')})."
             );
         }
     }
 
     /**
      * Validate line data structure and account ownership.
+     *
+     * @param  list<array{account_id: int, description: string|null, debit: string, credit: string}>  $linesData
      *
      * @throws \InvalidArgumentException
      */
@@ -267,18 +296,18 @@ class JournalEntryService
                 throw new \InvalidArgumentException("Le compte de la ligne {$num} est inactif.");
             }
 
-            $debit = $line['debit'] ?? 0;
-            $credit = $line['credit'] ?? 0;
+            $debit = $this->normalizeDecimal($line['debit']);
+            $credit = $this->normalizeDecimal($line['credit']);
 
-            if (bccomp((string) $debit, '0', 3) < 0 || bccomp((string) $credit, '0', 3) < 0) {
+            if (bccomp($debit, '0.000', 3) < 0 || bccomp($credit, '0.000', 3) < 0) {
                 throw new \InvalidArgumentException("Les montants de la ligne {$num} doivent être positifs.");
             }
 
-            if (bccomp((string) $debit, '0', 3) > 0 && bccomp((string) $credit, '0', 3) > 0) {
+            if (bccomp($debit, '0.000', 3) > 0 && bccomp($credit, '0.000', 3) > 0) {
                 throw new \InvalidArgumentException("La ligne {$num} ne peut pas avoir à la fois un débit et un crédit.");
             }
 
-            if (bccomp((string) $debit, '0', 3) === 0 && bccomp((string) $credit, '0', 3) === 0) {
+            if (bccomp($debit, '0.000', 3) === 0 && bccomp($credit, '0.000', 3) === 0) {
                 throw new \InvalidArgumentException("La ligne {$num} doit avoir un débit ou un crédit supérieur à zéro.");
             }
         }
@@ -287,23 +316,25 @@ class JournalEntryService
     /**
      * Validate debit/credit rules on posted entry lines.
      *
+     * @param  Collection<int, JournalEntryLine>  $lines
+     *
      * @throws \InvalidArgumentException
      */
     public function validateLineRules($lines): void
     {
         foreach ($lines as $line) {
-            $debit = $line->debit;
-            $credit = $line->credit;
+            $debit = $this->normalizeDecimal($line->debit);
+            $credit = $this->normalizeDecimal($line->credit);
 
-            if (bccomp((string) $debit, '0', 3) < 0 || bccomp((string) $credit, '0', 3) < 0) {
+            if (bccomp($debit, '0.000', 3) < 0 || bccomp($credit, '0.000', 3) < 0) {
                 throw new \InvalidArgumentException('Les montants doivent être positifs.');
             }
 
-            if (bccomp((string) $debit, '0', 3) > 0 && bccomp((string) $credit, '0', 3) > 0) {
+            if (bccomp($debit, '0.000', 3) > 0 && bccomp($credit, '0.000', 3) > 0) {
                 throw new \InvalidArgumentException('Une ligne ne peut pas avoir à la fois un débit et un crédit.');
             }
 
-            if (bccomp((string) $debit, '0', 3) === 0 && bccomp((string) $credit, '0', 3) === 0) {
+            if (bccomp($debit, '0.000', 3) === 0 && bccomp($credit, '0.000', 3) === 0) {
                 throw new \InvalidArgumentException('Chaque ligne doit avoir un débit ou un crédit supérieur à zéro.');
             }
         }
@@ -312,16 +343,18 @@ class JournalEntryService
     /**
      * Validate that total debit equals total credit.
      *
+     * @param  Collection<int, JournalEntryLine>  $lines
+     *
      * @throws \InvalidArgumentException
      */
     public function validateBalance($lines): void
     {
-        $totalDebit = '0';
-        $totalCredit = '0';
+        $totalDebit = '0.000';
+        $totalCredit = '0.000';
 
         foreach ($lines as $line) {
-            $totalDebit = bcadd($totalDebit, (string) $line->debit, 3);
-            $totalCredit = bcadd($totalCredit, (string) $line->credit, 3);
+            $totalDebit = bcadd($totalDebit, $this->normalizeDecimal($line->debit), 3);
+            $totalCredit = bcadd($totalCredit, $this->normalizeDecimal($line->credit), 3);
         }
 
         if (bccomp($totalDebit, $totalCredit, 3) !== 0) {

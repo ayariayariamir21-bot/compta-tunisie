@@ -54,6 +54,8 @@ class ChartOfJournalsSeeder
 
     /**
      * Default Tunisian accounting journals.
+     *
+     * @return list<array{code: string, name: string, type: JournalType}>
      */
     private function defaultJournals(): array
     {

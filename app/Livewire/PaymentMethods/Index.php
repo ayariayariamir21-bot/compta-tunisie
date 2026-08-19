@@ -7,6 +7,7 @@ use App\Models\PaymentMethod;
 use App\Services\Accounting\PaymentMethodService;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Index extends Component
@@ -133,7 +134,7 @@ class Index extends Component
         $this->redirect(route('payment-methods.index'), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany)
+    public function render(CurrentCompany $currentCompany): View
     {
         $company = $currentCompany->get(Auth::user());
 

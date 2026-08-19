@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethodType;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaymentMethod extends Model
 {
+    /** @use HasFactory<Factory> */
     use HasFactory;
 
     protected $fillable = [
@@ -32,6 +34,9 @@ class PaymentMethod extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Company, $this>
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

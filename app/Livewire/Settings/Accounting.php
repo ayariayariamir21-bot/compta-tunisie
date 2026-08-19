@@ -9,6 +9,7 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -138,7 +139,7 @@ class Accounting extends Component
         Flux::toast(variant: 'success', text: 'Paramètres comptables mis à jour.');
     }
 
-    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): View
     {
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = $currentFiscalYear->get(Auth::user());

@@ -6,7 +6,9 @@ use App\Enums\TaxType;
 use App\Models\TaxRate;
 use App\Services\Accounting\TaxRateService;
 use App\Services\CurrentCompany;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -19,7 +21,7 @@ class Edit extends Component
 
     public string $rate = '0.000';
 
-    public ?TaxType $type = null;
+    public ?string $type = null;
 
     public int $sort_order = 0;
 
@@ -50,7 +52,7 @@ class Edit extends Component
         $this->taxRate = $taxRate;
         $this->code = $taxRate->code;
         $this->name = $taxRate->name;
-        $this->rate = $taxRate->rate;
+        $this->rate = (string) $taxRate->rate;
         $this->type = $taxRate->type;
         $this->sort_order = $taxRate->sort_order;
         $this->description = $taxRate->description;
@@ -58,6 +60,7 @@ class Edit extends Component
         $this->is_default = $taxRate->is_default;
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -72,6 +75,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -119,7 +123,7 @@ class Edit extends Component
         $this->redirect(route('tax-rates.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.tax-rates.edit', [
             'taxTypes' => TaxType::cases(),

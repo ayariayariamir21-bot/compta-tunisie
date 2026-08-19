@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FiscalYear extends Model
 {
+    /** @use HasFactory<Factory> */
     use HasFactory;
 
     protected $fillable = [
@@ -31,21 +33,33 @@ class FiscalYear extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Company, $this>
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * @return HasMany<AccountingPeriod, $this>
+     */
     public function accountingPeriods(): HasMany
     {
         return $this->hasMany(AccountingPeriod::class);
     }
 
+    /**
+     * @return HasMany<Journal, $this>
+     */
     public function journals(): HasMany
     {
         return $this->hasMany(Journal::class);
     }
 
+    /**
+     * @return HasMany<JournalEntry, $this>
+     */
     public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class);

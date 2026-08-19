@@ -8,7 +8,10 @@ use App\Models\JournalEntry;
 use App\Services\Accounting\JournalEntryService;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use Carbon\Carbon;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -47,7 +50,7 @@ class Edit extends Component
 
         $this->journalEntry = $entry;
         $this->journal_id = $entry->journal_id;
-        $this->entry_date = $entry->entry_date->format('Y-m-d');
+        $this->entry_date = Carbon::parse($entry->entry_date)->format('Y-m-d');
         $this->reference = $entry->reference ?? '';
         $this->description = $entry->description ?? '';
         $this->lines = $entry->lines->map(fn ($line) => [
@@ -58,6 +61,7 @@ class Edit extends Component
         ])->toArray();
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -73,6 +77,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -102,23 +107,25 @@ class Edit extends Component
         }
     }
 
+    /** @return numeric-string */
     public function getTotalDebit(): string
     {
-        $total = '0';
+        $total = '0.000';
         foreach ($this->lines as $line) {
             $debit = $line['debit'] !== '' ? $line['debit'] : '0';
-            $total = bcadd($total, $debit, 3);
+            $total = bcadd($total, is_numeric($debit) ? number_format((float) $debit, 3, '.', '') : '0.000', 3);
         }
 
         return $total;
     }
 
+    /** @return numeric-string */
     public function getTotalCredit(): string
     {
-        $total = '0';
+        $total = '0.000';
         foreach ($this->lines as $line) {
             $credit = $line['credit'] !== '' ? $line['credit'] : '0';
-            $total = bcadd($total, $credit, 3);
+            $total = bcadd($total, is_numeric($credit) ? number_format((float) $credit, 3, '.', '') : '0.000', 3);
         }
 
         return $total;
@@ -150,12 +157,13 @@ class Edit extends Component
 
         $validated = $this->validate();
 
-        $linesData = collect($validated['lines'])->map(fn ($line) => [
-            'account_id' => $line['account_id'],
+        /** @var list<array{account_id: int, description: string|null, debit: string, credit: string}> */
+        $linesData = array_map(fn ($line) => [
+            'account_id' => (int) $line['account_id'],
             'description' => $line['description'] ?? null,
-            'debit' => $line['debit'] !== '' ? $line['debit'] : '0',
-            'credit' => $line['credit'] !== '' ? $line['credit'] : '0',
-        ])->toArray();
+            'debit' => $line['debit'] !== '' ? (string) $line['debit'] : '0',
+            'credit' => $line['credit'] !== '' ? (string) $line['credit'] : '0',
+        ], $validated['lines']);
 
         try {
             $service->updateDraft($this->journalEntry, $validated, $linesData);
@@ -170,7 +178,7 @@ class Edit extends Component
         $this->redirect(route('journal-entries.index'), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): View
     {
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = $currentFiscalYear->get(Auth::user());

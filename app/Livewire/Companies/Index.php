@@ -5,6 +5,7 @@ namespace App\Livewire\Companies;
 use App\Models\Company;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Index extends Component
@@ -51,7 +52,7 @@ class Index extends Component
         $this->redirect(route('companies.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.companies.index', [
             'companies' => Auth::user()

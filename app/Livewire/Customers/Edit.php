@@ -8,7 +8,9 @@ use App\Models\Customer;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use App\Services\CustomerService;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -21,7 +23,7 @@ class Edit extends Component
 
     public ?string $legal_name = null;
 
-    public ?CustomerType $customer_type = null;
+    public ?string $customer_type = null;
 
     public ?string $tax_identifier = null;
 
@@ -86,12 +88,13 @@ class Edit extends Component
         $this->email = $customer->email;
         $this->website = $customer->website;
         $this->payment_terms_days = $customer->payment_terms_days;
-        $this->credit_limit = $customer->credit_limit;
+        $this->credit_limit = $customer->credit_limit !== null ? (string) $customer->credit_limit : null;
         $this->account_id = $customer->account_id;
         $this->notes = $customer->notes;
         $this->is_active = $customer->is_active;
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -118,6 +121,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -177,7 +181,7 @@ class Edit extends Component
         $this->redirect(route('customers.index'), navigate: true);
     }
 
-    public function render(CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentFiscalYear $currentFiscalYear): View
     {
         $fiscalYear = $currentFiscalYear->get(Auth::user());
         $company = app(CurrentCompany::class)->get(Auth::user());

@@ -16,23 +16,24 @@ class TrialBalanceService
      *
      * Aggregates posted journal entry lines by account using database-level aggregation.
      *
-     * @param  array{from_date?: string, to_date?: string, account_type?: string, account_id?: int, include_zero_balance?: bool}  $filters
+     * @param  array{from_date?: string, to_date?: string, account_type?: string, account_id?: int|null, include_zero_balance?: string|bool}  $filters
+     * @return array{accounts: Collection<int, \stdClass>, total_debit: numeric-string, total_credit: numeric-string, total_debit_balance: numeric-string, total_credit_balance: numeric-string, is_balanced: bool, difference: numeric-string}
      */
     public function getTrialBalance(Company $company, FiscalYear $fiscalYear, array $filters = []): array
     {
         $accounts = $this->getAccountTotals($company, $fiscalYear, $filters);
         $grandTotals = $this->getGrandTotals($company, $fiscalYear, $filters);
 
-        $totalDebit = $grandTotals['total_debit'] ?? '0.000';
-        $totalCredit = $grandTotals['total_credit'] ?? '0.000';
+        $totalDebit = $grandTotals['total_debit'];
+        $totalCredit = $grandTotals['total_credit'];
         $isBalanced = bccomp($totalDebit, $totalCredit, 3) === 0;
 
         return [
             'accounts' => $accounts,
             'total_debit' => $totalDebit,
             'total_credit' => $totalCredit,
-            'total_debit_balance' => $grandTotals['total_debit_balance'] ?? '0.000',
-            'total_credit_balance' => $grandTotals['total_credit_balance'] ?? '0.000',
+            'total_debit_balance' => $grandTotals['total_debit_balance'],
+            'total_credit_balance' => $grandTotals['total_credit_balance'],
             'is_balanced' => $isBalanced,
             'difference' => bcsub($totalDebit, $totalCredit, 3),
         ];
@@ -40,10 +41,13 @@ class TrialBalanceService
 
     /**
      * Get aggregated account totals from posted journal entry lines.
+     *
+     * @param  array{from_date?: string, to_date?: string, account_type?: string, account_id?: int|null, include_zero_balance?: string|bool}  $filters
+     * @return Collection<int, \stdClass>
      */
     public function getAccountTotals(Company $company, FiscalYear $fiscalYear, array $filters = []): Collection
     {
-        $query = Account::query()
+        $query = DB::table('accounts')
             ->select([
                 'accounts.id',
                 'accounts.code',
@@ -64,22 +68,18 @@ class TrialBalanceService
             ->groupBy('accounts.id', 'accounts.code', 'accounts.name', 'accounts.account_type');
 
         if (isset($filters['from_date']) && $filters['from_date'] !== '') {
-            $query->whereHas('journalEntryLines.journalEntry', function ($q) use ($filters) {
-                $q->where('entry_date', '>=', $filters['from_date']);
-            });
+            $query->where('journal_entries.entry_date', '>=', $filters['from_date']);
         }
 
         if (isset($filters['to_date']) && $filters['to_date'] !== '') {
-            $query->whereHas('journalEntryLines.journalEntry', function ($q) use ($filters) {
-                $q->where('entry_date', '<=', $filters['to_date']);
-            });
+            $query->where('journal_entries.entry_date', '<=', $filters['to_date']);
         }
 
         if (isset($filters['account_type']) && $filters['account_type'] !== '') {
             $query->where('accounts.account_type', $filters['account_type']);
         }
 
-        if (isset($filters['account_id']) && $filters['account_id'] !== '') {
+        if (isset($filters['account_id'])) {
             $query->where('accounts.id', $filters['account_id']);
         }
 
@@ -113,6 +113,9 @@ class TrialBalanceService
 
     /**
      * Get grand totals for the trial balance.
+     *
+     * @param  array{from_date?: string, to_date?: string, account_type?: string, account_id?: int|null, include_zero_balance?: string|bool}  $filters
+     * @return array{total_debit: numeric-string, total_credit: numeric-string, total_debit_balance: numeric-string, total_credit_balance: numeric-string}
      */
     public function getGrandTotals(Company $company, FiscalYear $fiscalYear, array $filters = []): array
     {
@@ -139,7 +142,7 @@ class TrialBalanceService
             $query->where('accounts.account_type', $filters['account_type']);
         }
 
-        if (isset($filters['account_id']) && $filters['account_id'] !== '') {
+        if (isset($filters['account_id'])) {
             $query->where('accounts.id', $filters['account_id']);
         }
 

@@ -67,6 +67,8 @@ class ChartOfAccountsSeeder
      *
      * Based on common Tunisian PCG (Plan Comptable Général) conventions.
      * This is a starter structure, not an exhaustive legally verified chart.
+     *
+     * @return list<array{code: string, name: string, type: string, description?: string, parent_code?: string}>
      */
     private function defaultChart(): array
     {

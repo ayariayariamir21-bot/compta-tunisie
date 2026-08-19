@@ -4,7 +4,10 @@ namespace App\Livewire\FiscalYears;
 
 use App\Models\FiscalYear;
 use App\Services\CurrentCompany;
+use Carbon\Carbon;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -36,10 +39,11 @@ class Edit extends Component
         $this->fiscalYear = $fiscalYear;
         $this->name = $fiscalYear->name;
         $this->code = $fiscalYear->code;
-        $this->start_date = $fiscalYear->start_date->format('Y-m-d');
-        $this->end_date = $fiscalYear->end_date->format('Y-m-d');
+        $this->start_date = Carbon::parse($fiscalYear->start_date)->format('Y-m-d');
+        $this->end_date = Carbon::parse($fiscalYear->end_date)->format('Y-m-d');
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -50,6 +54,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -94,8 +99,8 @@ class Edit extends Component
         $hasPeriods = $this->fiscalYear->accountingPeriods()->exists();
 
         if ($hasPeriods && (
-            $validated['start_date'] !== $this->fiscalYear->start_date->format('Y-m-d')
-            || $validated['end_date'] !== $this->fiscalYear->end_date->format('Y-m-d')
+            $validated['start_date'] !== Carbon::parse($this->fiscalYear->start_date)->format('Y-m-d')
+            || $validated['end_date'] !== Carbon::parse($this->fiscalYear->end_date)->format('Y-m-d')
         )) {
             $this->addError('start_date', 'Impossible de modifier les dates d\'un exercice comportant déjà des périodes comptables.');
 
@@ -109,7 +114,7 @@ class Edit extends Component
         $this->redirect(route('fiscal-years.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.fiscal-years.edit');
     }

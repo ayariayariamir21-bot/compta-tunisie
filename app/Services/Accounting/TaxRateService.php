@@ -12,6 +12,8 @@ class TaxRateService
     /**
      * Create a new tax rate.
      *
+     * @param  array{code: string, name: string, rate: float|string, type: string, is_active?: bool, is_default?: bool, sort_order?: int, description?: string|null}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function create(Company $company, array $data): TaxRate
@@ -46,6 +48,8 @@ class TaxRateService
 
     /**
      * Update a tax rate.
+     *
+     * @param  array{code: string, name: string, rate: float|string, type: string, is_active?: bool, is_default?: bool, sort_order?: int, description?: string|null}  $data
      *
      * @throws \InvalidArgumentException
      */
@@ -199,8 +203,10 @@ class TaxRateService
      *
      * @throws \InvalidArgumentException
      */
-    public function validateRate(float $rate): void
+    public function validateRate(float|string $rate): void
     {
+        $rate = (float) $rate;
+
         if ($rate < 0) {
             throw new \InvalidArgumentException('Le taux de taxe ne peut pas être négatif.');
         }

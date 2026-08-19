@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\JournalEntryStatus;
 use App\Models\JournalEntry;
 use App\Models\User;
 
@@ -54,7 +53,7 @@ class JournalEntryPolicy
 
     public function post(User $user, JournalEntry $journalEntry): bool
     {
-        if ($journalEntry->status !== JournalEntryStatus::DRAFT) {
+        if (! $journalEntry->isDraft()) {
             return false;
         }
 

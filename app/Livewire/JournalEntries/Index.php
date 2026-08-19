@@ -9,6 +9,7 @@ use App\Services\Accounting\JournalEntryService;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -102,7 +103,7 @@ class Index extends Component
         $this->redirect(route('journal-entries.index'), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): View
     {
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = $currentFiscalYear->get(Auth::user());

@@ -6,6 +6,7 @@ use App\Models\FiscalYear;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Index extends Component
@@ -61,7 +62,7 @@ class Index extends Component
         $this->redirect(route('fiscal-years.index'), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany)
+    public function render(CurrentCompany $currentCompany): View
     {
         $company = $currentCompany->get(Auth::user());
 

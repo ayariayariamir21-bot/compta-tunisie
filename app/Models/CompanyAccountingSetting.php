@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class CompanyAccountingSetting extends Model
 {
+    /** @use HasFactory<Factory> */
     use HasFactory;
 
     protected $table = 'company_accounting_settings';
@@ -50,61 +52,97 @@ class CompanyAccountingSetting extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Company, $this>
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * @return BelongsTo<Journal, $this>
+     */
     public function defaultSalesJournal(): BelongsTo
     {
         return $this->belongsTo(Journal::class, 'default_sales_journal_id');
     }
 
+    /**
+     * @return BelongsTo<Journal, $this>
+     */
     public function defaultPurchaseJournal(): BelongsTo
     {
         return $this->belongsTo(Journal::class, 'default_purchase_journal_id');
     }
 
+    /**
+     * @return BelongsTo<Journal, $this>
+     */
     public function defaultBankJournal(): BelongsTo
     {
         return $this->belongsTo(Journal::class, 'default_bank_journal_id');
     }
 
+    /**
+     * @return BelongsTo<Journal, $this>
+     */
     public function defaultCashJournal(): BelongsTo
     {
         return $this->belongsTo(Journal::class, 'default_cash_journal_id');
     }
 
+    /**
+     * @return BelongsTo<Journal, $this>
+     */
     public function defaultMiscJournal(): BelongsTo
     {
         return $this->belongsTo(Journal::class, 'default_misc_journal_id');
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function defaultCustomerAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_customer_account_id');
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function defaultSupplierAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_supplier_account_id');
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function defaultSalesAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_sales_account_id');
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function defaultPurchaseAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_purchase_account_id');
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function defaultBankAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_bank_account_id');
     }
 
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function defaultCashAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_cash_account_id');

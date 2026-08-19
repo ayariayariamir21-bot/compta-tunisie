@@ -7,6 +7,7 @@ use App\Services\CurrentAccountingPeriod;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class AccountingPeriodSwitcher extends Component
@@ -51,7 +52,7 @@ class AccountingPeriodSwitcher extends Component
         $this->redirect(url()->previous(), navigate: true);
     }
 
-    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear)
+    public function render(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): View
     {
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = $currentFiscalYear->get(Auth::user());

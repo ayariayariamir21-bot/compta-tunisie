@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Company extends Model
 {
+    /** @use HasFactory<Factory> */
     use HasFactory;
 
     protected $fillable = [
@@ -39,6 +41,9 @@ class Company extends Model
         ];
     }
 
+    /**
+     * @return BelongsToMany<User, $this>
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
@@ -49,36 +54,57 @@ class Company extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return HasMany<FiscalYear, $this>
+     */
     public function fiscalYears(): HasMany
     {
         return $this->hasMany(FiscalYear::class);
     }
 
+    /**
+     * @return HasMany<Journal, $this>
+     */
     public function journals(): HasMany
     {
         return $this->hasMany(Journal::class);
     }
 
+    /**
+     * @return HasMany<JournalEntry, $this>
+     */
     public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class);
     }
 
+    /**
+     * @return HasOne<CompanyAccountingSetting, $this>
+     */
     public function accountingSettings(): HasOne
     {
         return $this->hasOne(CompanyAccountingSetting::class);
     }
 
+    /**
+     * @return HasMany<PaymentMethod, $this>
+     */
     public function paymentMethods(): HasMany
     {
         return $this->hasMany(PaymentMethod::class);
     }
 
+    /**
+     * @return HasMany<TaxRate, $this>
+     */
     public function taxRates(): HasMany
     {
         return $this->hasMany(TaxRate::class);
     }
 
+    /**
+     * @return HasMany<Customer, $this>
+     */
     public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);

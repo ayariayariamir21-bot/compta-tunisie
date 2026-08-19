@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class CompanySwitcher extends Component
@@ -46,7 +47,7 @@ class CompanySwitcher extends Component
         );
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.company-switcher', [
             'companies' => Auth::user()

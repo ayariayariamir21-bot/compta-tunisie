@@ -6,7 +6,9 @@ use App\Enums\PaymentMethodType;
 use App\Models\PaymentMethod;
 use App\Services\Accounting\PaymentMethodService;
 use App\Services\CurrentCompany;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Edit extends Component
@@ -17,7 +19,7 @@ class Edit extends Component
 
     public string $name = '';
 
-    public ?PaymentMethodType $type = null;
+    public ?string $type = null;
 
     public int $sort_order = 0;
 
@@ -55,6 +57,7 @@ class Edit extends Component
         $this->is_default = $paymentMethod->is_default;
     }
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -68,6 +71,7 @@ class Edit extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -114,7 +118,7 @@ class Edit extends Component
         $this->redirect(route('payment-methods.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.payment-methods.edit', [
             'paymentMethodTypes' => PaymentMethodType::cases(),

@@ -8,17 +8,37 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Journal;
 use App\Models\JournalEntryLine;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 
 class GeneralLedgerService
 {
     /**
+     * Normalize a value to a numeric string with 3 decimal places.
+     *
+     *
+     * @return numeric-string
+     */
+    private function normalizeDecimal(string|int|float|null $value): string
+    {
+        if ($value === null || $value === '') {
+            return '0.000';
+        }
+
+        $numVal = is_numeric($value) ? (string) $value : '0.000';
+
+        return number_format((float) $numVal, 3, '.', '');
+    }
+
+    /**
      * Get all accounts that have posted journal entry lines in the current context.
      *
      * Includes inactive accounts with historical data.
+     *
+     * @return Collection<int, Account>
      */
-    public function getAccountsForContext(Company $company, FiscalYear $fiscalYear): Collection
+    public function getAccountsForContext(Company $company, FiscalYear $fiscalYear): EloquentCollection
     {
         return Account::where('accounts.company_id', $company->id)
             ->where('accounts.fiscal_year_id', $fiscalYear->id)
@@ -40,9 +60,10 @@ class GeneralLedgerService
      *
      * Ordering: entry_date ASC, journal code ASC, entry_number ASC, line id ASC.
      *
-     * @param  array{from_date?: string, to_date?: string, journal_id?: int}  $filters
+     * @param  array{from_date?: string, to_date?: string, journal_id?: int|null, search?: string}  $filters
+     * @return Collection<int, JournalEntryLine>
      */
-    public function getAccountLedger(Account $account, Company $company, FiscalYear $fiscalYear, array $filters = []): Collection
+    public function getAccountLedger(Account $account, Company $company, FiscalYear $fiscalYear, array $filters = []): EloquentCollection
     {
         return JournalEntryLine::query()
             ->select([
@@ -64,16 +85,18 @@ class GeneralLedgerService
             ->where('journal_entries.fiscal_year_id', $fiscalYear->id)
             ->where('journal_entries.status', JournalEntryStatus::POSTED)
             ->when(isset($filters['from_date']) && $filters['from_date'] !== '', function ($q) use ($filters) {
-                $q->where('journal_entries.entry_date', '>=', $filters['from_date']);
+                $fromDate = $filters['from_date'] ?? '';
+                $q->where('journal_entries.entry_date', '>=', $fromDate);
             })
             ->when(isset($filters['to_date']) && $filters['to_date'] !== '', function ($q) use ($filters) {
-                $q->where('journal_entries.entry_date', '<=', $filters['to_date']);
+                $toDate = $filters['to_date'] ?? '';
+                $q->where('journal_entries.entry_date', '<=', $toDate);
             })
-            ->when(isset($filters['journal_id']) && $filters['journal_id'] !== '', function ($q) use ($filters) {
+            ->when(isset($filters['journal_id']), function ($q) use ($filters) {
                 $q->where('journal_entries.journal_id', $filters['journal_id']);
             })
             ->when(isset($filters['search']) && $filters['search'] !== '', function ($q) use ($filters) {
-                $search = $filters['search'];
+                $search = $filters['search'] ?? '';
                 $q->where(function ($q2) use ($search) {
                     $q2->where('journal_entries.reference', 'like', "%{$search}%")
                         ->orWhere('journal_entries.description', 'like', "%{$search}%")
@@ -92,10 +115,12 @@ class GeneralLedgerService
      *
      * Returns the sum of all debit and credit from posted entries before from_date.
      * If no from_date is provided, opening balance is 0.
+     *
+     * @return numeric-string
      */
     public function calculateOpeningBalance(Account $account, Company $company, FiscalYear $fiscalYear, ?string $fromDate = null): string
     {
-        if (! $fromDate || $fromDate === '') {
+        if ($fromDate === null || $fromDate === '') {
             return '0.000';
         }
 
@@ -119,7 +144,34 @@ class GeneralLedgerService
     }
 
     /**
+     * Safe bcadd that guarantees numeric-string return.
+     *
+     * @param  numeric-string  $num1
+     * @param  numeric-string  $num2
+     * @return numeric-string
+     */
+    private function safeBcadd(string $num1, string $num2, int $scale = 3): string
+    {
+        return bcadd($num1, $num2, $scale);
+    }
+
+    /**
+     * Safe bcsub that guarantees numeric-string return.
+     *
+     * @param  numeric-string  $num1
+     * @param  numeric-string  $num2
+     * @return numeric-string
+     */
+    private function safeBcsub(string $num1, string $num2, int $scale = 3): string
+    {
+        return bcsub($num1, $num2, $scale);
+    }
+
+    /**
      * Calculate the closing balance for an account.
+     *
+     * @param  array{from_date?: string, to_date?: string, journal_id?: int|null, search?: string}  $filters
+     * @return numeric-string
      */
     public function calculateClosingBalance(Account $account, Company $company, FiscalYear $fiscalYear, array $filters = []): string
     {
@@ -142,7 +194,7 @@ class GeneralLedgerService
             $query->where('journal_entries.entry_date', '<=', $filters['to_date']);
         }
 
-        if (isset($filters['journal_id']) && $filters['journal_id'] !== '') {
+        if (isset($filters['journal_id'])) {
             $query->where('journal_entries.journal_id', $filters['journal_id']);
         }
 
@@ -156,6 +208,9 @@ class GeneralLedgerService
 
     /**
      * Get the full ledger summary for an account including opening balance, lines, and closing balance.
+     *
+     * @param  array{from_date?: string, to_date?: string, journal_id?: int|null, search?: string}  $filters
+     * @return array{account: Account, opening_balance: numeric-string, lines: Collection<int, JournalEntryLine>, closing_balance: numeric-string}
      */
     public function getLedgerSummary(Account $account, Company $company, FiscalYear $fiscalYear, array $filters = []): array
     {
@@ -165,8 +220,10 @@ class GeneralLedgerService
         $runningBalance = $openingBalance;
 
         foreach ($lines as $line) {
-            $runningBalance = bcadd($runningBalance, $line->debit, 3);
-            $runningBalance = bcsub($runningBalance, $line->credit, 3);
+            $lineDebit = $this->normalizeDecimal($line->getAttribute('debit'));
+            $lineCredit = $this->normalizeDecimal($line->getAttribute('credit'));
+            $runningBalance = $this->safeBcadd($runningBalance, $lineDebit);
+            $runningBalance = $this->safeBcsub($runningBalance, $lineCredit);
         }
 
         return [
@@ -179,8 +236,10 @@ class GeneralLedgerService
 
     /**
      * Get available journals for the current context.
+     *
+     * @return Collection<int, Journal>
      */
-    public function getJournalsForContext(Company $company, FiscalYear $fiscalYear): Collection
+    public function getJournalsForContext(Company $company, FiscalYear $fiscalYear): EloquentCollection
     {
         return Journal::where('company_id', $company->id)
             ->where('fiscal_year_id', $fiscalYear->id)

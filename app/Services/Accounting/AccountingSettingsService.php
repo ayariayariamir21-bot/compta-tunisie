@@ -46,6 +46,8 @@ class AccountingSettingsService
     /**
      * Update accounting settings for a company.
      *
+     * @param  array{default_currency?: string, decimal_precision?: int, fiscal_year_start_month?: int, default_sales_journal_id?: int|null, default_purchase_journal_id?: int|null, default_bank_journal_id?: int|null, default_cash_journal_id?: int|null, default_misc_journal_id?: int|null, default_customer_account_id?: int|null, default_supplier_account_id?: int|null, default_sales_account_id?: int|null, default_purchase_account_id?: int|null, default_bank_account_id?: int|null, default_cash_account_id?: int|null, invoice_prefix?: string, invoice_next_number?: int, quote_prefix?: string, quote_next_number?: int}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function updateSettings(CompanyAccountingSetting $settings, array $data, int $companyId, ?int $fiscalYearId = null): CompanyAccountingSetting
@@ -65,6 +67,9 @@ class AccountingSettingsService
 
     /**
      * Validate default journal and account references.
+     *
+     * @param  array{default_currency?: string, decimal_precision?: int, fiscal_year_start_month?: int, default_sales_journal_id?: int|null, default_purchase_journal_id?: int|null, default_bank_journal_id?: int|null, default_cash_journal_id?: int|null, default_misc_journal_id?: int|null, default_customer_account_id?: int|null, default_supplier_account_id?: int|null, default_sales_account_id?: int|null, default_purchase_account_id?: int|null, default_bank_account_id?: int|null, default_cash_account_id?: int|null, invoice_prefix?: string, invoice_next_number?: int, quote_prefix?: string, quote_next_number?: int}  $data
+     * @return array<string, mixed>
      *
      * @throws \InvalidArgumentException
      */

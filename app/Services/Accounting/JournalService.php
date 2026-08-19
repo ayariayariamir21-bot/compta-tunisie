@@ -11,6 +11,8 @@ class JournalService
     /**
      * Create a new journal with full validation.
      *
+     * @param  array{code: string, name: string, type: string, is_active?: bool}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function createJournal(
@@ -40,6 +42,8 @@ class JournalService
 
     /**
      * Update a journal with full validation.
+     *
+     * @param  array{code: string, name: string, type: string, is_active?: bool}  $data
      *
      * @throws \InvalidArgumentException
      */

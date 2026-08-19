@@ -11,6 +11,8 @@ class AccountService
     /**
      * Create a new account with full validation.
      *
+     * @param  array{code: string, name: string, account_type: string, parent_id?: int|null, is_active?: bool, description?: string}  $data
+     *
      * @throws \InvalidArgumentException
      */
     public function createAccount(
@@ -51,6 +53,8 @@ class AccountService
 
     /**
      * Update an account with full validation.
+     *
+     * @param  array{code: string, name: string, account_type: string, parent_id?: int|null, is_active?: bool, description?: string}  $data
      *
      * @throws \InvalidArgumentException
      */

@@ -6,7 +6,9 @@ use App\Enums\TaxType;
 use App\Models\TaxRate;
 use App\Services\Accounting\TaxRateService;
 use App\Services\CurrentCompany;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Create extends Component
@@ -27,6 +29,7 @@ class Create extends Component
 
     public bool $is_default = false;
 
+    /** @return array<string, list<string|ValidationRule>> */
     public function rules(): array
     {
         return [
@@ -41,6 +44,7 @@ class Create extends Component
         ];
     }
 
+    /** @return array<string, string> */
     public function validationAttributes(): array
     {
         return [
@@ -84,7 +88,7 @@ class Create extends Component
         $this->redirect(route('tax-rates.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.tax-rates.create', [
             'taxTypes' => TaxType::cases(),
