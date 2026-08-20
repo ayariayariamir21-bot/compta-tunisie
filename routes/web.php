@@ -123,6 +123,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('products/{productId}/edit', App\Livewire\Products\Edit::class)
         ->name('products.edit');
+
+    Route::get('quotes', App\Livewire\Quotes\Index::class)
+        ->name('quotes.index');
+
+    Route::get('quotes/create', App\Livewire\Quotes\Create::class)
+        ->name('quotes.create');
+
+    Route::get('quotes/{quoteId}', App\Livewire\Quotes\Show::class)
+        ->name('quotes.show');
+
+    Route::get('quotes/{quoteId}/edit', App\Livewire\Quotes\Edit::class)
+        ->name('quotes.edit');
 });
 
 require __DIR__.'/settings.php';

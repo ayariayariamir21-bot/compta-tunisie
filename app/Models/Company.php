@@ -125,4 +125,12 @@ class Company extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /**
+     * @return HasMany<Quote, $this>
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
 }

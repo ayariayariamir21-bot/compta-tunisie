@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
@@ -72,5 +73,13 @@ class Product extends Model
     public function purchaseAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'purchase_account_id');
+    }
+
+    /**
+     * @return HasMany<QuoteLine, $this>
+     */
+    public function quoteLines(): HasMany
+    {
+        return $this->hasMany(QuoteLine::class);
     }
 }

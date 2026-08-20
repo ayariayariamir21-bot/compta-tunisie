@@ -73,4 +73,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(JournalEntry::class, 'created_by');
     }
+
+    /**
+     * @return HasMany<Quote, $this>
+     */
+    public function createdQuotes(): HasMany
+    {
+        return $this->hasMany(Quote::class, 'created_by');
+    }
 }

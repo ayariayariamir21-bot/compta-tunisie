@@ -51,4 +51,12 @@ class TaxRate extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /**
+     * @return HasMany<QuoteLine, $this>
+     */
+    public function quoteLines(): HasMany
+    {
+        return $this->hasMany(QuoteLine::class);
+    }
 }
