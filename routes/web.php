@@ -111,6 +111,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('suppliers/{supplierId}/edit', App\Livewire\Suppliers\Edit::class)
         ->name('suppliers.edit');
+
+    Route::get('products', App\Livewire\Products\Index::class)
+        ->name('products.index');
+
+    Route::get('products/create', App\Livewire\Products\Create::class)
+        ->name('products.create');
+
+    Route::get('products/{productId}', App\Livewire\Products\Show::class)
+        ->name('products.show');
+
+    Route::get('products/{productId}/edit', App\Livewire\Products\Edit::class)
+        ->name('products.edit');
 });
 
 require __DIR__.'/settings.php';

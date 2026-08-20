@@ -61,6 +61,10 @@
                     <flux:sidebar.item icon="users" :href="route('customers.index')" :current="request()->routeIs('customers.*')" wire:navigate>
                         {{ __('Clients') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="cube" :href="route('products.index')" :current="request()->routeIs('products.*')" wire:navigate>
+                        {{ __('Produits & Services') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Achats')" class="grid">

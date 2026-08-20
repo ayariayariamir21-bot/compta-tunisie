@@ -114,4 +114,20 @@ class Account extends Model
     {
         return $this->hasMany(Supplier::class);
     }
+
+    /**
+     * @return HasMany<Product, $this>
+     */
+    public function productsAsSalesAccount(): HasMany
+    {
+        return $this->hasMany(Product::class, 'sales_account_id');
+    }
+
+    /**
+     * @return HasMany<Product, $this>
+     */
+    public function productsAsPurchaseAccount(): HasMany
+    {
+        return $this->hasMany(Product::class, 'purchase_account_id');
+    }
 }
