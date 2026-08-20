@@ -63,6 +63,12 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
+                <flux:sidebar.group :heading="__('Achats')" class="grid">
+                    <flux:sidebar.item icon="truck" :href="route('suppliers.index')" :current="request()->routeIs('suppliers.*')" wire:navigate>
+                        {{ __('Fournisseurs') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
                 <flux:sidebar.group :heading="__('Rapports comptables')" class="grid">
                     <flux:sidebar.item icon="book-open" :href="route('reports.general-ledger')" :current="request()->routeIs('reports.general-ledger')" wire:navigate>
                         {{ __('Grand Livre') }}
