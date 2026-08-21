@@ -135,6 +135,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('quotes/{quoteId}/edit', App\Livewire\Quotes\Edit::class)
         ->name('quotes.edit');
+
+    Route::get('invoices', App\Livewire\Invoices\Index::class)
+        ->name('invoices.index');
+
+    Route::get('invoices/create', App\Livewire\Invoices\Create::class)
+        ->name('invoices.create');
+
+    Route::get('invoices/{invoiceId}', App\Livewire\Invoices\Show::class)
+        ->name('invoices.show');
+
+    Route::get('invoices/{invoiceId}/edit', App\Livewire\Invoices\Edit::class)
+        ->name('invoices.edit');
 });
 
 require __DIR__.'/settings.php';

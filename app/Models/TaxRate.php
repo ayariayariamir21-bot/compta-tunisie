@@ -24,6 +24,7 @@ class TaxRate extends Model
         'is_default',
         'sort_order',
         'description',
+        'sales_tax_account_id',
     ];
 
     protected function casts(): array
@@ -58,5 +59,21 @@ class TaxRate extends Model
     public function quoteLines(): HasMany
     {
         return $this->hasMany(QuoteLine::class);
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function salesTaxAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'sales_tax_account_id');
+    }
+
+    /**
+     * @return HasMany<InvoiceLine, $this>
+     */
+    public function invoiceLines(): HasMany
+    {
+        return $this->hasMany(InvoiceLine::class);
     }
 }

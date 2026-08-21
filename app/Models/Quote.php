@@ -6,6 +6,7 @@ use App\Enums\QuoteStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -90,5 +91,13 @@ class Quote extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(QuoteLine::class)->orderBy('sort_order');
+    }
+
+    /**
+     * @return HasOne<Invoice, $this>
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
     }
 }

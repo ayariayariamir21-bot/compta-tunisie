@@ -82,4 +82,12 @@ class Product extends Model
     {
         return $this->hasMany(QuoteLine::class);
     }
+
+    /**
+     * @return HasMany<InvoiceLine, $this>
+     */
+    public function invoiceLines(): HasMany
+    {
+        return $this->hasMany(InvoiceLine::class);
+    }
 }

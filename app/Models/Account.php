@@ -130,4 +130,12 @@ class Account extends Model
     {
         return $this->hasMany(Product::class, 'purchase_account_id');
     }
+
+    /**
+     * @return HasMany<InvoiceLine, $this>
+     */
+    public function invoiceLines(): HasMany
+    {
+        return $this->hasMany(InvoiceLine::class, 'sales_account_id');
+    }
 }

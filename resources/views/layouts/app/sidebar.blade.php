@@ -69,6 +69,10 @@
                     <flux:sidebar.item icon="document-text" :href="route('quotes.index')" :current="request()->routeIs('quotes.*')" wire:navigate>
                         {{ __('Devis') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="document-duplicate" :href="route('invoices.index')" :current="request()->routeIs('invoices.*')" wire:navigate>
+                        {{ __('Factures') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Achats')" class="grid">

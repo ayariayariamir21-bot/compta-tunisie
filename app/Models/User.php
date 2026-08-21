@@ -81,4 +81,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Quote::class, 'created_by');
     }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function createdInvoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'created_by');
+    }
 }

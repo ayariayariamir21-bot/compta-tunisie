@@ -60,4 +60,12 @@ class Journal extends Model
     {
         return $this->hasMany(JournalEntry::class);
     }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }
