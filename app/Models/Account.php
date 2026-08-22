@@ -138,4 +138,12 @@ class Account extends Model
     {
         return $this->hasMany(InvoiceLine::class, 'sales_account_id');
     }
+
+    /**
+     * @return HasMany<CreditNoteLine, $this>
+     */
+    public function creditNoteLines(): HasMany
+    {
+        return $this->hasMany(CreditNoteLine::class);
+    }
 }

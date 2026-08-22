@@ -73,6 +73,10 @@
                     <flux:sidebar.item icon="document-duplicate" :href="route('invoices.index')" :current="request()->routeIs('invoices.*')" wire:navigate>
                         {{ __('Factures') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="receipt-refund" :href="route('credit-notes.index')" :current="request()->routeIs('credit-notes.*')" wire:navigate>
+                        {{ __('Avoirs') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Achats')" class="grid">

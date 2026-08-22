@@ -90,4 +90,12 @@ class Product extends Model
     {
         return $this->hasMany(InvoiceLine::class);
     }
+
+    /**
+     * @return HasMany<CreditNoteLine, $this>
+     */
+    public function creditNoteLines(): HasMany
+    {
+        return $this->hasMany(CreditNoteLine::class);
+    }
 }

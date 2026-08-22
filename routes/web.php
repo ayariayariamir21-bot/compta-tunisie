@@ -147,6 +147,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('invoices/{invoiceId}/edit', App\Livewire\Invoices\Edit::class)
         ->name('invoices.edit');
+
+    Route::get('credit-notes', App\Livewire\CreditNotes\Index::class)
+        ->name('credit-notes.index');
+
+    Route::get('credit-notes/create', App\Livewire\CreditNotes\Create::class)
+        ->name('credit-notes.create');
+
+    Route::get('credit-notes/{creditNoteId}', App\Livewire\CreditNotes\Show::class)
+        ->name('credit-notes.show');
+
+    Route::get('credit-notes/{creditNoteId}/edit', App\Livewire\CreditNotes\Edit::class)
+        ->name('credit-notes.edit');
 });
 
 require __DIR__.'/settings.php';

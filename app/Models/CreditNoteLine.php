@@ -4,12 +4,32 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class InvoiceLine extends Model
+/**
+ * @property-read int $id
+ * @property-read int $credit_note_id
+ * @property-read int|null $invoice_line_id
+ * @property-read int $product_id
+ * @property-read string $description
+ * @property-read numeric-string $quantity
+ * @property-read string $unit
+ * @property-read numeric-string $unit_price
+ * @property-read numeric-string $discount_percent
+ * @property-read numeric-string $discount_amount
+ * @property-read int|null $tax_rate_id
+ * @property-read string|null $tax_code
+ * @property-read numeric-string $tax_rate
+ * @property-read numeric-string $tax_amount
+ * @property-read numeric-string $line_subtotal
+ * @property-read numeric-string $line_total
+ * @property-read int|null $sales_account_id
+ * @property-read int $sort_order
+ */
+class CreditNoteLine extends Model
 {
     protected $fillable = [
-        'invoice_id',
+        'credit_note_id',
+        'invoice_line_id',
         'product_id',
         'description',
         'quantity',
@@ -43,11 +63,19 @@ class InvoiceLine extends Model
     }
 
     /**
-     * @return BelongsTo<Invoice, $this>
+     * @return BelongsTo<CreditNote, $this>
      */
-    public function invoice(): BelongsTo
+    public function creditNote(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(CreditNote::class);
+    }
+
+    /**
+     * @return BelongsTo<InvoiceLine, $this>
+     */
+    public function invoiceLine(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceLine::class);
     }
 
     /**
@@ -71,14 +99,6 @@ class InvoiceLine extends Model
      */
     public function salesAccount(): BelongsTo
     {
-        return $this->belongsTo(Account::class, 'sales_account_id');
-    }
-
-    /**
-     * @return HasMany<CreditNoteLine, $this>
-     */
-    public function creditNoteLines(): HasMany
-    {
-        return $this->hasMany(CreditNoteLine::class);
+        return $this->belongsTo(Account::class);
     }
 }

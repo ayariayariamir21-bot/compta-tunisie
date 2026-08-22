@@ -139,4 +139,12 @@ class JournalEntry extends Model
     {
         return $this->hasOne(Invoice::class);
     }
+
+    /**
+     * @return BelongsTo<CreditNote, $this>
+     */
+    public function creditNote(): BelongsTo
+    {
+        return $this->belongsTo(CreditNote::class);
+    }
 }

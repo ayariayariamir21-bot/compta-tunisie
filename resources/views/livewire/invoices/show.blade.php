@@ -20,6 +20,9 @@
                     <button wire:click="cancel" wire:confirm="Voulez-vous vraiment annuler cette facture ?" class="flux-btn-orange">Annuler</button>
                     <button wire:click="delete" wire:confirm="Voulez-vous vraiment supprimer cette facture ? Cette action est irréversible." class="flux-btn-red">Supprimer</button>
                 @endif
+                @if ($this->isPosted)
+                    <a href="{{ route('credit-notes.create', ['invoice' => $invoice->id]) }}" class="flux-btn-primary" wire:navigate>Créer un avoir</a>
+                @endif
                 <a href="{{ route('invoices.index') }}" class="text-sm text-flux-600 hover:text-flux-500 dark:text-flux-400" wire:navigate>Retour à la liste</a>
             </div>
         </div>

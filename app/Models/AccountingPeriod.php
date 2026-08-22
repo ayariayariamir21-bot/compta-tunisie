@@ -75,4 +75,12 @@ class AccountingPeriod extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    /**
+     * @return HasMany<CreditNote, $this>
+     */
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class);
+    }
 }

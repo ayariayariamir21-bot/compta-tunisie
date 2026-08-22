@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\InvoiceStatus;
+use App\Enums\CreditNoteStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,24 +15,22 @@ use Illuminate\Support\Carbon;
  * @property-read int $fiscal_year_id
  * @property-read int $accounting_period_id
  * @property-read int $journal_id
- * @property-read int|null $quote_id
- * @property-read string $invoice_number
- * @property-read Carbon $invoice_date
- * @property-read Carbon|null $due_date
- * @property-read InvoiceStatus $status
+ * @property-read int $invoice_id
+ * @property-read string $credit_note_number
+ * @property-read Carbon $credit_note_date
+ * @property-read string|null $reason
+ * @property-read CreditNoteStatus $status
  * @property-read string $currency
- * @property-read string $subtotal
- * @property-read string $discount_total
- * @property-read string $tax_total
- * @property-read string $total
- * @property-read int $payment_terms_days
+ * @property-read numeric-string $subtotal
+ * @property-read numeric-string $discount_total
+ * @property-read numeric-string $tax_total
+ * @property-read numeric-string $total
  * @property-read string|null $notes
- * @property-read string|null $terms
  * @property-read int $created_by
  * @property-read Carbon|null $posted_at
  * @property-read int|null $journal_entry_id
  */
-class Invoice extends Model
+class CreditNote extends Model
 {
     protected $fillable = [
         'company_id',
@@ -40,19 +38,17 @@ class Invoice extends Model
         'fiscal_year_id',
         'accounting_period_id',
         'journal_id',
-        'quote_id',
-        'invoice_number',
-        'invoice_date',
-        'due_date',
+        'invoice_id',
+        'credit_note_number',
+        'credit_note_date',
+        'reason',
         'status',
         'currency',
         'subtotal',
         'discount_total',
         'tax_total',
         'total',
-        'payment_terms_days',
         'notes',
-        'terms',
         'created_by',
         'posted_at',
         'journal_entry_id',
@@ -61,14 +57,12 @@ class Invoice extends Model
     protected function casts(): array
     {
         return [
-            'invoice_date' => 'date',
-            'due_date' => 'date',
-            'status' => InvoiceStatus::class,
+            'credit_note_date' => 'date',
+            'status' => CreditNoteStatus::class,
             'subtotal' => 'decimal:3',
             'discount_total' => 'decimal:3',
             'tax_total' => 'decimal:3',
             'total' => 'decimal:3',
-            'payment_terms_days' => 'integer',
             'posted_at' => 'datetime',
         ];
     }
@@ -114,11 +108,11 @@ class Invoice extends Model
     }
 
     /**
-     * @return BelongsTo<Quote, $this>
+     * @return BelongsTo<Invoice, $this>
      */
-    public function quote(): BelongsTo
+    public function invoice(): BelongsTo
     {
-        return $this->belongsTo(Quote::class);
+        return $this->belongsTo(Invoice::class);
     }
 
     /**
@@ -138,18 +132,10 @@ class Invoice extends Model
     }
 
     /**
-     * @return HasMany<InvoiceLine, $this>
+     * @return HasMany<CreditNoteLine, $this>
      */
     public function lines(): HasMany
     {
-        return $this->hasMany(InvoiceLine::class)->orderBy('sort_order');
-    }
-
-    /**
-     * @return HasMany<CreditNote, $this>
-     */
-    public function creditNotes(): HasMany
-    {
-        return $this->hasMany(CreditNote::class);
+        return $this->hasMany(CreditNoteLine::class)->orderBy('sort_order');
     }
 }
