@@ -146,4 +146,12 @@ class Account extends Model
     {
         return $this->hasMany(CreditNoteLine::class);
     }
+
+    /**
+     * @return HasMany<CustomerPayment, $this>
+     */
+    public function customerPaymentsAsDestination(): HasMany
+    {
+        return $this->hasMany(CustomerPayment::class, 'destination_account_id');
+    }
 }

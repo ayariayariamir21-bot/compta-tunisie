@@ -77,6 +77,10 @@
                     <flux:sidebar.item icon="receipt-refund" :href="route('credit-notes.index')" :current="request()->routeIs('credit-notes.*')" wire:navigate>
                         {{ __('Avoirs') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="banknotes" :href="route('customer-payments.index')" :current="request()->routeIs('customer-payments.*')" wire:navigate>
+                        {{ __('Encaissements') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Achats')" class="grid">

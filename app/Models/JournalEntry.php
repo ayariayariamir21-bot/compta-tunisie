@@ -147,4 +147,14 @@ class JournalEntry extends Model
     {
         return $this->belongsTo(CreditNote::class);
     }
+
+    /**
+     * Payment that produced this entry, if any.
+     *
+     * @return HasOne<CustomerPayment, $this>
+     */
+    public function customerPayment(): HasOne
+    {
+        return $this->hasOne(CustomerPayment::class);
+    }
 }

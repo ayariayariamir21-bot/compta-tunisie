@@ -50,7 +50,7 @@ class Edit extends Component
         $this->paymentMethod = $paymentMethod;
         $this->code = $paymentMethod->code;
         $this->name = $paymentMethod->name;
-        $this->type = $paymentMethod->type;
+        $this->type = $paymentMethod->type->value;
         $this->sort_order = $paymentMethod->sort_order;
         $this->description = $paymentMethod->description;
         $this->is_active = $paymentMethod->is_active;
