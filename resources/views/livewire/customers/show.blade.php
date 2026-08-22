@@ -14,6 +14,14 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <a
+                    href="{{ route('reports.customer-statement', ['customerId' => $customer->id]) }}"
+                    wire:navigate
+                    class="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium transition hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                >
+                    Relevé client
+                </a>
+
                 @if (Auth::user()->can('update', $customer))
                     <a
                         href="{{ route('customers.edit', $customer->id) }}"

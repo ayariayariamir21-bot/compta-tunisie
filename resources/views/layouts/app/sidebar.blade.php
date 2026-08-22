@@ -97,6 +97,10 @@
                     <flux:sidebar.item icon="calculator" :href="route('reports.trial-balance')" :current="request()->routeIs('reports.trial-balance')" wire:navigate>
                         {{ __('Balance') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="document-text" :href="route('reports.customer-statement')" :current="request()->routeIs('reports.customer-statement')" wire:navigate>
+                        {{ __('Relevé client') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
