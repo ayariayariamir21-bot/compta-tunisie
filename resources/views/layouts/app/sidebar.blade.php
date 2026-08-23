@@ -110,6 +110,10 @@
                         {{ __('Balance') }}
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="scale" :href="route('reports.balance-sheet')" :current="request()->routeIs('reports.balance-sheet')" wire:navigate>
+                        {{ __('Bilan') }}
+                    </flux:sidebar.item>
+
                     <flux:sidebar.item icon="document-text" :href="route('reports.customer-statement')" :current="request()->routeIs('reports.customer-statement')" wire:navigate>
                         {{ __('Relevé client') }}
                     </flux:sidebar.item>

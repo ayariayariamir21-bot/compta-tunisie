@@ -4,6 +4,7 @@ use App\Livewire\Companies\Create;
 use App\Livewire\Companies\Edit;
 use App\Livewire\Companies\Index;
 use App\Livewire\JournalEntries\Show;
+use App\Livewire\Reports\BalanceSheet;
 use App\Livewire\Reports\CustomerStatement;
 use App\Livewire\Reports\GeneralLedger;
 use App\Livewire\Reports\SupplierStatement;
@@ -89,6 +90,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('reports/trial-balance', TrialBalance::class)
         ->name('reports.trial-balance');
+
+    Route::get('reports/balance-sheet', BalanceSheet::class)
+        ->name('reports.balance-sheet');
 
     Route::get('reports/customer-statement/{customerId?}', CustomerStatement::class)
         ->name('reports.customer-statement');
