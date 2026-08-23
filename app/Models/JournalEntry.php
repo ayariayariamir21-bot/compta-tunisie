@@ -157,4 +157,14 @@ class JournalEntry extends Model
     {
         return $this->hasOne(CustomerPayment::class);
     }
+
+    /**
+     * Supplier payment that produced this entry, if any.
+     *
+     * @return HasOne<SupplierPayment, $this>
+     */
+    public function supplierPayment(): HasOne
+    {
+        return $this->hasOne(SupplierPayment::class);
+    }
 }

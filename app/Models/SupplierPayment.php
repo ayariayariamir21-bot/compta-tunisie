@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\PurchaseInvoiceStatus;
+use App\Enums\SupplierPaymentStatus;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,43 +16,40 @@ use Illuminate\Support\Carbon;
  * @property-read int $supplier_id
  * @property-read int $fiscal_year_id
  * @property-read int $accounting_period_id
+ * @property-read int $payment_method_id
  * @property-read int $journal_id
- * @property-read string $invoice_number
- * @property-read string|null $supplier_invoice_number
- * @property-read Carbon $invoice_date
- * @property-read Carbon|null $due_date
- * @property-read PurchaseInvoiceStatus $status
+ * @property-read int $destination_account_id
+ * @property-read string $payment_number
+ * @property-read Carbon $payment_date
+ * @property-read numeric-string $amount
  * @property-read string $currency
- * @property-read string $subtotal
- * @property-read string $discount_total
- * @property-read string $tax_total
- * @property-read string $total
- * @property-read int $payment_terms_days
+ * @property-read string|null $reference
  * @property-read string|null $notes
+ * @property-read SupplierPaymentStatus $status
  * @property-read int $created_by
  * @property-read Carbon|null $posted_at
  * @property-read int|null $journal_entry_id
  */
-class PurchaseInvoice extends Model
+class SupplierPayment extends Model
 {
+    /** @use HasFactory<Factory> */
+    use HasFactory;
+
     protected $fillable = [
         'company_id',
         'supplier_id',
         'fiscal_year_id',
         'accounting_period_id',
+        'payment_method_id',
         'journal_id',
-        'invoice_number',
-        'supplier_invoice_number',
-        'invoice_date',
-        'due_date',
-        'status',
+        'destination_account_id',
+        'payment_number',
+        'payment_date',
+        'amount',
         'currency',
-        'subtotal',
-        'discount_total',
-        'tax_total',
-        'total',
-        'payment_terms_days',
+        'reference',
         'notes',
+        'status',
         'created_by',
         'posted_at',
         'journal_entry_id',
@@ -59,14 +58,9 @@ class PurchaseInvoice extends Model
     protected function casts(): array
     {
         return [
-            'invoice_date' => 'date',
-            'due_date' => 'date',
-            'status' => PurchaseInvoiceStatus::class,
-            'subtotal' => 'decimal:3',
-            'discount_total' => 'decimal:3',
-            'tax_total' => 'decimal:3',
-            'total' => 'decimal:3',
-            'payment_terms_days' => 'integer',
+            'payment_date' => 'date',
+            'status' => SupplierPaymentStatus::class,
+            'amount' => 'decimal:3',
             'posted_at' => 'datetime',
         ];
     }
@@ -104,11 +98,29 @@ class PurchaseInvoice extends Model
     }
 
     /**
+     * @return BelongsTo<PaymentMethod, $this>
+     */
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
+
+    /**
      * @return BelongsTo<Journal, $this>
      */
     public function journal(): BelongsTo
     {
         return $this->belongsTo(Journal::class);
+    }
+
+    /**
+     * Bank or cash account from which the money was paid.
+     *
+     * @return BelongsTo<Account, $this>
+     */
+    public function destinationAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'destination_account_id');
     }
 
     /**
@@ -128,18 +140,36 @@ class PurchaseInvoice extends Model
     }
 
     /**
-     * @return HasMany<PurchaseInvoiceLine, $this>
-     */
-    public function lines(): HasMany
-    {
-        return $this->hasMany(PurchaseInvoiceLine::class)->orderBy('sort_order');
-    }
-
-    /**
      * @return HasMany<SupplierPaymentAllocation, $this>
      */
-    public function supplierPaymentAllocations(): HasMany
+    public function allocations(): HasMany
     {
-        return $this->hasMany(SupplierPaymentAllocation::class, 'purchase_invoice_id');
+        return $this->hasMany(SupplierPaymentAllocation::class);
+    }
+
+    /** @return numeric-string */
+    public function allocatedAmount(): string
+    {
+        $allocated = $this->allocations->sum('amount');
+
+        return number_format((float) str_replace(',', '', (string) $allocated), 3, '.', '');
+    }
+
+    /** @return numeric-string */
+    public function unallocatedAmount(): string
+    {
+        $unallocated = bcsub((string) $this->amount, $this->allocatedAmount(), 3);
+
+        return bccomp($unallocated, '0', 3) < 0 ? '0.000' : $unallocated;
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === SupplierPaymentStatus::DRAFT;
+    }
+
+    public function isPosted(): bool
+    {
+        return $this->status === SupplierPaymentStatus::POSTED;
     }
 }

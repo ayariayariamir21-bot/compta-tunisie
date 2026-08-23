@@ -154,4 +154,12 @@ class Account extends Model
     {
         return $this->hasMany(CustomerPayment::class, 'destination_account_id');
     }
+
+    /**
+     * @return HasMany<SupplierPayment, $this>
+     */
+    public function supplierPaymentsAsDestination(): HasMany
+    {
+        return $this->hasMany(SupplierPayment::class, 'destination_account_id');
+    }
 }
