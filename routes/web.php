@@ -203,6 +203,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('supplier-payments/{supplierPaymentId}/edit', App\Livewire\SupplierPayments\Edit::class)
         ->name('supplier-payments.edit');
+
+    Route::get('expenses', App\Livewire\Expenses\Index::class)
+        ->name('expenses.index');
+
+    Route::get('expenses/create', App\Livewire\Expenses\Create::class)
+        ->name('expenses.create');
+
+    Route::get('expenses/{expenseId}', App\Livewire\Expenses\Show::class)
+        ->name('expenses.show');
+
+    Route::get('expenses/{expenseId}/edit', App\Livewire\Expenses\Edit::class)
+        ->name('expenses.edit');
 });
 
 require __DIR__.'/settings.php';

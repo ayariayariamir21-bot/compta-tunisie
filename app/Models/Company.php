@@ -165,4 +165,12 @@ class Company extends Model
     {
         return $this->hasMany(SupplierPayment::class);
     }
+
+    /**
+     * @return HasMany<Expense, $this>
+     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
 }

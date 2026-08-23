@@ -167,4 +167,14 @@ class JournalEntry extends Model
     {
         return $this->hasOne(SupplierPayment::class);
     }
+
+    /**
+     * Expense that produced this entry, if any.
+     *
+     * @return HasOne<Expense, $this>
+     */
+    public function expense(): HasOne
+    {
+        return $this->hasOne(Expense::class);
+    }
 }

@@ -162,4 +162,14 @@ class Account extends Model
     {
         return $this->hasMany(SupplierPayment::class, 'destination_account_id');
     }
+
+    /**
+     * Expense lines booked to this account.
+     *
+     * @return HasMany<ExpenseLine, $this>
+     */
+    public function expenseLines(): HasMany
+    {
+        return $this->hasMany(ExpenseLine::class, 'expense_account_id');
+    }
 }

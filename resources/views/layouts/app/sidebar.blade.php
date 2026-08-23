@@ -95,6 +95,10 @@
                     <flux:sidebar.item icon="banknotes" :href="route('supplier-payments.index')" :current="request()->routeIs('supplier-payments.*')" wire:navigate>
                         {{ __('Règlements fournisseurs') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="receipt-percent" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')" wire:navigate>
+                        {{ __('Dépenses') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Rapports comptables')" class="grid">

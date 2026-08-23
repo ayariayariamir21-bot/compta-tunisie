@@ -101,4 +101,12 @@ class TaxRate extends Model
     {
         return $this->hasMany(CreditNoteLine::class);
     }
+
+    /**
+     * @return HasMany<ExpenseLine, $this>
+     */
+    public function expenseLines(): HasMany
+    {
+        return $this->hasMany(ExpenseLine::class);
+    }
 }
