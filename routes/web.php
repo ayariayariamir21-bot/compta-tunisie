@@ -10,6 +10,7 @@ use App\Livewire\Reports\GeneralLedger;
 use App\Livewire\Reports\IncomeStatement;
 use App\Livewire\Reports\SupplierStatement;
 use App\Livewire\Reports\TrialBalance;
+use App\Livewire\Reports\VatReport;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -97,6 +98,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('reports/income-statement', IncomeStatement::class)
         ->name('reports.income-statement');
+
+    Route::get('reports/vat', VatReport::class)
+        ->name('reports.vat');
 
     Route::get('reports/customer-statement/{customerId?}', CustomerStatement::class)
         ->name('reports.customer-statement');

@@ -118,6 +118,10 @@
                         {{ __('Compte de résultat') }}
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="receipt-percent" :href="route('reports.vat')" :current="request()->routeIs('reports.vat')" wire:navigate>
+                        {{ __('TVA') }}
+                    </flux:sidebar.item>
+
                     <flux:sidebar.item icon="document-text" :href="route('reports.customer-statement')" :current="request()->routeIs('reports.customer-statement')" wire:navigate>
                         {{ __('Relevé client') }}
                     </flux:sidebar.item>
