@@ -6,6 +6,7 @@ use App\Livewire\Companies\Index;
 use App\Livewire\JournalEntries\Show;
 use App\Livewire\Reports\CustomerStatement;
 use App\Livewire\Reports\GeneralLedger;
+use App\Livewire\Reports\SupplierStatement;
 use App\Livewire\Reports\TrialBalance;
 use Illuminate\Support\Facades\Route;
 
@@ -91,6 +92,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('reports/customer-statement/{customerId?}', CustomerStatement::class)
         ->name('reports.customer-statement');
+
+    Route::get('reports/supplier-statement/{supplierId?}', SupplierStatement::class)
+        ->name('reports.supplier-statement');
 
     Route::get('customers', App\Livewire\Customers\Index::class)
         ->name('customers.index');

@@ -109,6 +109,10 @@
                     <flux:sidebar.item icon="document-text" :href="route('reports.customer-statement')" :current="request()->routeIs('reports.customer-statement')" wire:navigate>
                         {{ __('Relevé client') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="receipt-percent" :href="route('reports.supplier-statement')" :current="request()->routeIs('reports.supplier-statement')" wire:navigate>
+                        {{ __('Relevé fournisseur') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
