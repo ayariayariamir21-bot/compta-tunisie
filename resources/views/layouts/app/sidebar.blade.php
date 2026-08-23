@@ -114,6 +114,10 @@
                         {{ __('Bilan') }}
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="chart-bar" :href="route('reports.income-statement')" :current="request()->routeIs('reports.income-statement')" wire:navigate>
+                        {{ __('Compte de résultat') }}
+                    </flux:sidebar.item>
+
                     <flux:sidebar.item icon="document-text" :href="route('reports.customer-statement')" :current="request()->routeIs('reports.customer-statement')" wire:navigate>
                         {{ __('Relevé client') }}
                     </flux:sidebar.item>
