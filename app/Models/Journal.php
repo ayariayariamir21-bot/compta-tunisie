@@ -14,6 +14,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * Journals group accounting entries by type (purchases, sales, bank, cash, etc.).
  * The combination (company_id, fiscal_year_id, code) is unique.
+ *
+ * @property-read int $id
+ * @property-read int $company_id
+ * @property-read int $fiscal_year_id
+ * @property-read string $code
+ * @property-read string $name
+ * @property-read JournalType $type
+ * @property-read bool $is_active
  */
 class Journal extends Model
 {

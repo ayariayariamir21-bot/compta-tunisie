@@ -25,6 +25,7 @@ class TaxRate extends Model
         'sort_order',
         'description',
         'sales_tax_account_id',
+        'purchase_tax_account_id',
     ];
 
     protected function casts(): array
@@ -70,11 +71,27 @@ class TaxRate extends Model
     }
 
     /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function purchaseTaxAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'purchase_tax_account_id');
+    }
+
+    /**
      * @return HasMany<InvoiceLine, $this>
      */
     public function invoiceLines(): HasMany
     {
         return $this->hasMany(InvoiceLine::class);
+    }
+
+    /**
+     * @return HasMany<PurchaseInvoiceLine, $this>
+     */
+    public function purchaseInvoiceLines(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoiceLine::class);
     }
 
     /**

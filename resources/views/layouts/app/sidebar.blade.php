@@ -87,6 +87,10 @@
                     <flux:sidebar.item icon="truck" :href="route('suppliers.index')" :current="request()->routeIs('suppliers.*')" wire:navigate>
                         {{ __('Fournisseurs') }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="document-text" :href="route('purchase-invoices.index')" :current="request()->routeIs('purchase-invoices.*')" wire:navigate>
+                        {{ __('Factures fournisseurs') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Rapports comptables')" class="grid">

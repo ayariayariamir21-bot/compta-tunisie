@@ -175,6 +175,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('customer-payments/{paymentId}/edit', App\Livewire\CustomerPayments\Edit::class)
         ->name('customer-payments.edit');
+
+    Route::get('purchase-invoices', App\Livewire\PurchaseInvoices\Index::class)
+        ->name('purchase-invoices.index');
+
+    Route::get('purchase-invoices/create', App\Livewire\PurchaseInvoices\Create::class)
+        ->name('purchase-invoices.create');
+
+    Route::get('purchase-invoices/{purchaseInvoiceId}', App\Livewire\PurchaseInvoices\Show::class)
+        ->name('purchase-invoices.show');
+
+    Route::get('purchase-invoices/{purchaseInvoiceId}/edit', App\Livewire\PurchaseInvoices\Edit::class)
+        ->name('purchase-invoices.edit');
 });
 
 require __DIR__.'/settings.php';

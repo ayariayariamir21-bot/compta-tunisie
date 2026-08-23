@@ -46,7 +46,7 @@ class Edit extends Component
         $this->journal = $journal;
         $this->code = $journal->code;
         $this->name = $journal->name;
-        $this->type = $journal->type;
+        $this->type = $journal->type->value;
         $this->is_active = $journal->is_active;
     }
 
