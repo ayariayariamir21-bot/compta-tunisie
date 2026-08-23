@@ -64,6 +64,22 @@
             </div>
         </div>
 
+        {{-- PDF export --}}
+        <div class="flex justify-end">
+            <flux:button
+                variant="outline"
+                href="{{ route('reports.income-statement.pdf', [
+                    'from_date' => $fromDate,
+                    'to_date' => $toDate,
+                    'include_zero_balance' => $includeZeroBalance,
+                ]) }}"
+                target="_blank"
+            >
+                <flux:icon name="arrow-down-tray" class="size-4" />
+                Exporter PDF
+            </flux:button>
+        </div>
+
         {{-- Invalid period --}}
         @if ($dateError)
             <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">

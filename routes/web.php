@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Reports\PdfReportController;
 use App\Livewire\Companies\Create;
 use App\Livewire\Companies\Edit;
 use App\Livewire\Companies\Index;
@@ -107,6 +108,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('reports/supplier-statement/{supplierId?}', SupplierStatement::class)
         ->name('reports.supplier-statement');
+
+    Route::get('reports/general-ledger/pdf', [PdfReportController::class, 'generalLedger'])
+        ->name('reports.general-ledger.pdf');
+
+    Route::get('reports/trial-balance/pdf', [PdfReportController::class, 'trialBalance'])
+        ->name('reports.trial-balance.pdf');
+
+    Route::get('reports/balance-sheet/pdf', [PdfReportController::class, 'balanceSheet'])
+        ->name('reports.balance-sheet.pdf');
+
+    Route::get('reports/income-statement/pdf', [PdfReportController::class, 'incomeStatement'])
+        ->name('reports.income-statement.pdf');
+
+    Route::get('reports/vat/pdf', [PdfReportController::class, 'vat'])
+        ->name('reports.vat.pdf');
+
+    Route::get('reports/customer-statement/{customerId}/pdf', [PdfReportController::class, 'customerStatement'])
+        ->name('reports.customer-statement.pdf');
+
+    Route::get('reports/supplier-statement/{supplierId}/pdf', [PdfReportController::class, 'supplierStatement'])
+        ->name('reports.supplier-statement.pdf');
 
     Route::get('customers', App\Livewire\Customers\Index::class)
         ->name('customers.index');

@@ -1,5 +1,4 @@
-<x-layouts::app :title="__('Grand Livre')">
-    <div class="flex h-full w-full flex-1 flex-col gap-6">
+<div class="flex h-full w-full flex-1 flex-col gap-6">
 
         {{-- Header --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -93,6 +92,24 @@
                 </div>
             </div>
 
+            {{-- PDF export --}}
+            <div class="flex justify-end">
+                <flux:button
+                    variant="outline"
+                    href="{{ route('reports.general-ledger.pdf', array_filter([
+                        'account_id' => $accountId,
+                        'journal_id' => $journalId,
+                        'from_date' => $fromDate,
+                        'to_date' => $toDate,
+                        'search' => $search,
+                    ], fn ($value) => $value !== null && $value !== '')) }}"
+                    target="_blank"
+                >
+                    <flux:icon name="arrow-down-tray" class="size-4" />
+                    Exporter PDF
+                </flux:button>
+            </div>
+
             {{-- Ledger content --}}
             @if (empty($ledgerData))
                 <div class="rounded-xl border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
@@ -166,7 +183,7 @@
                                     @endphp
                                     <tr class="transition hover:bg-neutral-50 dark:hover:bg-neutral-800">
                                         <td class="whitespace-nowrap px-4 py-2 text-sm">
-                                            {{ $line->entry_date->format('d/m/Y') }}
+                                            {{ \Illuminate\Support\Carbon::parse($line->entry_date)->format('d/m/Y') }}
                                         </td>
                                         <td class="whitespace-nowrap px-4 py-2 text-sm">
                                             {{ $line->journal_code }}
@@ -217,5 +234,4 @@
             @endif
         @endif
 
-    </div>
-</x-layouts::app>
+</div>

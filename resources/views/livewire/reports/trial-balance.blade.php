@@ -1,5 +1,4 @@
-<x-layouts::app :title="__('Balance')">
-    <div class="flex h-full w-full flex-1 flex-col gap-6">
+<div class="flex h-full w-full flex-1 flex-col gap-6">
 
         {{-- Header --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -77,6 +76,23 @@
                         <label for="includeZeroBalance" class="text-sm">Inclure soldes nuls</label>
                     </div>
                 </div>
+            </div>
+
+            {{-- PDF export --}}
+            <div class="flex justify-end">
+                <flux:button
+                    variant="outline"
+                    href="{{ route('reports.trial-balance.pdf', array_filter([
+                        'from_date' => $fromDate,
+                        'to_date' => $toDate,
+                        'account_type' => $accountType,
+                        'include_zero_balance' => $includeZeroBalance,
+                    ], fn ($value) => $value !== null && $value !== '')) }}"
+                    target="_blank"
+                >
+                    <flux:icon name="arrow-down-tray" class="size-4" />
+                    Exporter PDF
+                </flux:button>
             </div>
 
             {{-- Balance status --}}
@@ -160,5 +176,4 @@
             @endif
         @endif
 
-    </div>
-</x-layouts::app>
+</div>

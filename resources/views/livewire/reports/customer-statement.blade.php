@@ -92,6 +92,22 @@
                 </p>
             </div>
         @else
+            {{-- PDF export --}}
+            <div class="flex justify-end">
+                <flux:button
+                    variant="outline"
+                    href="{{ route('reports.customer-statement.pdf', array_filter([
+                        'customerId' => $customer->id,
+                        'from_date' => $fromDate,
+                        'to_date' => $toDate,
+                    ], fn ($value) => $value !== null && $value !== '')) }}"
+                    target="_blank"
+                >
+                    <flux:icon name="arrow-down-tray" class="size-4" />
+                    Exporter PDF
+                </flux:button>
+            </div>
+
             {{-- Statement header --}}
             <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
