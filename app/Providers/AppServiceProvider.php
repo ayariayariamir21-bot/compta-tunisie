@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Enums\AuditAction;
+use App\Models\Backup;
 use App\Models\User;
+use App\Policies\BackupPolicy;
 use App\Services\Security\AuditLogService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed as AuthFailed;
@@ -12,6 +14,7 @@ use Illuminate\Auth\Events\Logout as AuthLogout;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
@@ -33,7 +36,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->registerBackupPolicy();
         $this->listenForAuditEvents();
+    }
+
+    /**
+     * Backups are filesystem resources without an Eloquent model, so their
+     * policy cannot be auto-discovered and is registered explicitly.
+     */
+    protected function registerBackupPolicy(): void
+    {
+        Gate::policy(Backup::class, BackupPolicy::class);
     }
 
     /**

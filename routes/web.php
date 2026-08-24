@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\Reports\PdfReportController;
 use App\Livewire\AuditLogs\Index as AuditLogsIndex;
+use App\Livewire\Backups\Index as BackupsIndex;
 use App\Livewire\Companies\Create;
 use App\Livewire\Companies\Edit;
 use App\Livewire\Companies\Index;
@@ -35,6 +37,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('audit-logs', AuditLogsIndex::class)
         ->name('audit-logs.index');
+
+    Route::get('backups', BackupsIndex::class)
+        ->name('backups.index');
+
+    Route::post('backups', [BackupController::class, 'store'])
+        ->name('backups.create');
+
+    Route::get('backups/{backup}/download', [BackupController::class, 'download'])
+        ->where('backup', '[A-Za-z0-9\-]+\.dump')
+        ->name('backups.download');
+
+    Route::post('backups/{backup}/validate', [BackupController::class, 'validate'])
+        ->where('backup', '[A-Za-z0-9\-]+\.dump')
+        ->name('backups.validate');
+
+    Route::post('backups/{backup}/restore', [BackupController::class, 'restore'])
+        ->where('backup', '[A-Za-z0-9\-]+\.dump')
+        ->name('backups.restore');
 
     Route::get('fiscal-years', App\Livewire\FiscalYears\Index::class)
         ->name('fiscal-years.index');

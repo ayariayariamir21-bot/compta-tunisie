@@ -66,6 +66,14 @@ enum AuditAction: string
     case ExpensePosted = 'expense_posted';
     case ExpenseCancelled = 'expense_cancelled';
 
+    // Backups & restore (system-level operations, not company-scoped)
+    case BackupCreated = 'backup_created';
+    case BackupValidated = 'backup_validated';
+    case BackupDownloaded = 'backup_downloaded';
+    case BackupRestoreStarted = 'backup_restore_started';
+    case BackupRestoreSucceeded = 'backup_restore_succeeded';
+    case BackupRestoreFailed = 'backup_restore_failed';
+
     public function label(): string
     {
         return match ($this) {
@@ -117,6 +125,12 @@ enum AuditAction: string
             self::ExpenseCreated => 'Dépense créée',
             self::ExpensePosted => 'Dépense comptabilisée',
             self::ExpenseCancelled => 'Dépense annulée',
+            self::BackupCreated => 'Sauvegarde créée',
+            self::BackupValidated => 'Sauvegarde vérifiée',
+            self::BackupDownloaded => 'Sauvegarde téléchargée',
+            self::BackupRestoreStarted => 'Restauration démarrée',
+            self::BackupRestoreSucceeded => 'Restauration réussie',
+            self::BackupRestoreFailed => 'Restauration échouée',
         };
     }
 
@@ -129,7 +143,9 @@ enum AuditAction: string
         return match ($this) {
             self::Login, self::LoginFailed, self::Logout, self::TwoFactorEnabled, self::TwoFactorDisabled,
             self::CompanyCreated, self::CompanyUpdated, self::CompanyActivated, self::CompanyDeactivated,
-            self::RoleChanged, self::MemberActivated, self::MemberDeactivated, self::MemberRemoved => true,
+            self::RoleChanged, self::MemberActivated, self::MemberDeactivated, self::MemberRemoved,
+            self::BackupCreated, self::BackupValidated, self::BackupDownloaded,
+            self::BackupRestoreStarted, self::BackupRestoreSucceeded, self::BackupRestoreFailed => true,
             default => false,
         };
     }

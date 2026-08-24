@@ -109,6 +109,28 @@ class User extends Authenticatable implements FortifyPasskeyUser, PasskeyUser
     }
 
     /**
+     * Whether the user holds any of the given roles in at least one active
+     * company, regardless of which company. Used for system-level resources
+     * (backups) that span all companies.
+     */
+    public function hasRoleAnywhere(CompanyRole ...$roles): bool
+    {
+        if ($roles === []) {
+            return false;
+        }
+
+        return $this->companies()
+            ->wherePivot('is_active', true)
+            ->wherePivotIn('role', array_map(fn (CompanyRole $role) => $role->value, $roles))
+            ->exists();
+    }
+
+    public function isCompanyAdminAnywhere(): bool
+    {
+        return $this->hasRoleAnywhere(CompanyRole::Admin);
+    }
+
+    /**
      * @return HasMany<JournalEntry, $this>
      */
     public function createdJournalEntries(): HasMany

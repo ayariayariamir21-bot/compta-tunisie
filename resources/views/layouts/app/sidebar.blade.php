@@ -142,6 +142,12 @@
                         <flux:sidebar.item icon="shield-check" :href="route('audit-logs.index')" :current="request()->routeIs('audit-logs.*')" wire:navigate>
                             {{ __('Journal d’audit') }}
                         </flux:sidebar.item>
+
+                        @if (auth()->user()->can('viewAny', \App\Models\Backup::class))
+                            <flux:sidebar.item icon="archive-box" :href="route('backups.index')" :current="request()->routeIs('backups.*')" wire:navigate>
+                                {{ __('Sauvegardes') }}
+                            </flux:sidebar.item>
+                        @endif
                     </flux:sidebar.group>
                 @endif
             </flux:sidebar.nav>
