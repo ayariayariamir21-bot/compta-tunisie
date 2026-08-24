@@ -59,6 +59,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->where('backup', '[A-Za-z0-9\-]+\.dump')
         ->name('backups.restore');
 
+    Route::get('notifications', App\Livewire\Notifications\Index::class)
+        ->name('notifications.index');
+
     Route::get('fiscal-years', App\Livewire\FiscalYears\Index::class)
         ->name('fiscal-years.index');
 

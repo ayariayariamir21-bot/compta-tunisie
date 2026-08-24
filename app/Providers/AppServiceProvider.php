@@ -3,10 +3,13 @@
 namespace App\Providers;
 
 use App\Enums\AuditAction;
+use App\Enums\NotificationSeverity;
 use App\Models\Backup;
 use App\Models\User;
+use App\Notifications\SecurityNotification;
 use App\Policies\BackupPolicy;
 use App\Services\Security\AuditLogService;
+use App\Services\Security\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed as AuthFailed;
 use Illuminate\Auth\Events\Login as AuthLogin;
@@ -120,10 +123,24 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(function (TwoFactorAuthenticationEnabled $event): void {
             app(AuditLogService::class)->log(AuditAction::TwoFactorEnabled, description: 'Authentification à deux facteurs activée.', user: $event->user);
+
+            app(NotificationService::class)->notifyUser($event->user, new SecurityNotification(
+                title: 'Authentification à deux facteurs',
+                message: "L'authentification à deux facteurs a été activée sur votre compte.",
+                severity: NotificationSeverity::Success,
+                dedupKey: 'two_factor_enabled.'.$event->user->id,
+            ));
         });
 
         Event::listen(function (TwoFactorAuthenticationDisabled $event): void {
             app(AuditLogService::class)->log(AuditAction::TwoFactorDisabled, description: 'Authentification à deux facteurs désactivée.', user: $event->user);
+
+            app(NotificationService::class)->notifyUser($event->user, new SecurityNotification(
+                title: 'Authentification à deux facteurs',
+                message: "L'authentification à deux facteurs a été désactivée sur votre compte.",
+                severity: NotificationSeverity::Warning,
+                dedupKey: 'two_factor_disabled.'.$event->user->id,
+            ));
         });
     }
 }

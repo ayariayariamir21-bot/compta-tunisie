@@ -3,17 +3,22 @@
 namespace App\Services;
 
 use App\Enums\AuditAction;
+use App\Enums\CompanyRole;
 use App\Enums\JournalEntryStatus;
 use App\Enums\JournalType;
+use App\Enums\NotificationSeverity;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Models\Account;
+use App\Models\Company;
 use App\Models\CompanyAccountingSetting;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceLine;
+use App\Notifications\BusinessNotification;
 use App\Services\Accounting\JournalEntryService;
 use App\Services\Security\AuditLogService;
+use App\Services\Security\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +27,7 @@ class PurchaseInvoicePostingService
     public function __construct(
         private JournalEntryService $journalEntryService,
         private ?AuditLogService $auditLog = null,
+        private ?NotificationService $notifications = null,
     ) {}
 
     private function audits(): AuditLogService
@@ -29,9 +35,14 @@ class PurchaseInvoicePostingService
         return $this->auditLog ?? new AuditLogService;
     }
 
+    private function notifications(): NotificationService
+    {
+        return $this->notifications ?? new NotificationService;
+    }
+
     public function post(PurchaseInvoice $invoice, int $userId): PurchaseInvoice
     {
-        return DB::transaction(function () use ($invoice, $userId) {
+        $posted = DB::transaction(function () use ($invoice, $userId) {
             $invoice->load(['lines.product', 'lines.taxRate', 'supplier', 'fiscalYear', 'accountingPeriod', 'journal']);
 
             $this->validatePreconditions($invoice);
@@ -79,6 +90,26 @@ class PurchaseInvoicePostingService
 
             return $invoice;
         });
+
+        // Delivered after the accounting transaction commits.
+        $this->notifications()->notifyCompanyRoles(
+            Company::query()->findOrFail($posted->company_id),
+            CompanyRole::operationalRoles(),
+            new BusinessNotification(
+                title: "Facture d'achat comptabilisée",
+                message: "La facture d'achat {$posted->invoice_number} ({$posted->supplier->name}) a été comptabilisée.",
+                severity: NotificationSeverity::Success,
+                dedupKey: "purchase_invoice_posted.{$posted->id}",
+                companyId: $posted->company_id,
+                entityType: 'purchase_invoice',
+                entityId: $posted->id,
+                routeName: 'purchase-invoices.show',
+                routeParams: ['purchaseInvoiceId' => $posted->id],
+            ),
+            exceptUserId: $userId,
+        );
+
+        return $posted;
     }
 
     private function validatePreconditions(PurchaseInvoice $invoice): void

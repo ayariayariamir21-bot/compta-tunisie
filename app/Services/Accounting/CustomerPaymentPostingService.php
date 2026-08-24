@@ -3,17 +3,22 @@
 namespace App\Services\Accounting;
 
 use App\Enums\AuditAction;
+use App\Enums\CompanyRole;
 use App\Enums\CreditNoteStatus;
 use App\Enums\CustomerPaymentStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\JournalEntryStatus;
+use App\Enums\NotificationSeverity;
 use App\Models\Account;
+use App\Models\Company;
 use App\Models\CompanyAccountingSetting;
 use App\Models\CustomerPayment;
 use App\Models\Invoice;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Notifications\BusinessNotification;
 use App\Services\Security\AuditLogService;
+use App\Services\Security\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +37,7 @@ class CustomerPaymentPostingService
 
     public function post(CustomerPayment $payment, int $userId): CustomerPayment
     {
-        return DB::transaction(function () use ($payment, $userId): CustomerPayment {
+        $posted = DB::transaction(function () use ($payment, $userId): CustomerPayment {
             // Row-level lock serializes concurrent postings of the same payment.
             /** @var CustomerPayment $locked */
             $locked = CustomerPayment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
@@ -175,6 +180,26 @@ class CustomerPaymentPostingService
 
             return $locked;
         });
+
+        // Delivered after the accounting transaction commits.
+        app(NotificationService::class)->notifyCompanyRoles(
+            Company::query()->findOrFail($posted->company_id),
+            CompanyRole::operationalRoles(),
+            new BusinessNotification(
+                title: 'Règlement client comptabilisé',
+                message: "Le règlement {$posted->payment_number} ({$posted->customer->name}) a été comptabilisé.",
+                severity: NotificationSeverity::Success,
+                dedupKey: "customer_payment_posted.{$posted->id}",
+                companyId: $posted->company_id,
+                entityType: 'customer_payment',
+                entityId: $posted->id,
+                routeName: 'customer-payments.show',
+                routeParams: ['paymentId' => $posted->id],
+            ),
+            exceptUserId: $userId,
+        );
+
+        return $posted;
     }
 
     private function validatePreconditions(CustomerPayment $payment): void

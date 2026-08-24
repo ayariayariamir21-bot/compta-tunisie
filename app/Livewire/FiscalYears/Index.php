@@ -3,10 +3,14 @@
 namespace App\Livewire\FiscalYears;
 
 use App\Enums\AuditAction;
+use App\Enums\CompanyRole;
+use App\Enums\NotificationSeverity;
 use App\Models\FiscalYear;
+use App\Notifications\AccountingNotification;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
+use App\Services\Security\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -71,6 +75,22 @@ class Index extends Component
             "Exercice clôturé : {$fiscalYear->name}.",
             company: $currentCompany,
             entity: $fiscalYear,
+        );
+
+        app(NotificationService::class)->notifyCompanyRoles(
+            $currentCompany,
+            [CompanyRole::Admin, CompanyRole::Accountant],
+            new AccountingNotification(
+                title: 'Exercice clôturé',
+                message: "L'exercice « {$fiscalYear->name} » a été clôturé.",
+                severity: NotificationSeverity::Warning,
+                dedupKey: "fiscal_year_closed.{$fiscalYear->id}",
+                companyId: $currentCompany->id,
+                entityType: 'fiscal_year',
+                entityId: $fiscalYear->id,
+                routeName: 'fiscal-years.index',
+            ),
+            exceptUserId: (int) Auth::id(),
         );
 
         session()->flash('success', "L'exercice « {$fiscalYear->name} » a été clôturé.");

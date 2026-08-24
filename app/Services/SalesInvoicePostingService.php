@@ -3,16 +3,21 @@
 namespace App\Services;
 
 use App\Enums\AuditAction;
+use App\Enums\CompanyRole;
 use App\Enums\InvoiceStatus;
 use App\Enums\JournalEntryStatus;
+use App\Enums\NotificationSeverity;
 use App\Models\Account;
+use App\Models\Company;
 use App\Models\CompanyAccountingSetting;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Notifications\BusinessNotification;
 use App\Services\Accounting\JournalEntryService;
 use App\Services\Security\AuditLogService;
+use App\Services\Security\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +26,7 @@ class SalesInvoicePostingService
     public function __construct(
         private JournalEntryService $journalEntryService,
         private ?AuditLogService $auditLog = null,
+        private ?NotificationService $notifications = null,
     ) {}
 
     private function audits(): AuditLogService
@@ -28,9 +34,14 @@ class SalesInvoicePostingService
         return $this->auditLog ?? new AuditLogService;
     }
 
+    private function notifications(): NotificationService
+    {
+        return $this->notifications ?? new NotificationService;
+    }
+
     public function post(Invoice $invoice, int $userId): Invoice
     {
-        return DB::transaction(function () use ($invoice, $userId) {
+        $posted = DB::transaction(function () use ($invoice, $userId) {
             $invoice->load(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'fiscalYear', 'accountingPeriod', 'journal']);
 
             $this->validatePreconditions($invoice);
@@ -69,6 +80,28 @@ class SalesInvoicePostingService
 
             return $invoice;
         });
+
+        // Delivered after the accounting transaction commits: a rollback
+        // never leaves a notification claiming a posting happened, and a
+        // notification failure never breaks the posting.
+        $this->notifications()->notifyCompanyRoles(
+            Company::query()->findOrFail($posted->company_id),
+            CompanyRole::operationalRoles(),
+            new BusinessNotification(
+                title: 'Facture comptabilisée',
+                message: "La facture {$posted->invoice_number} ({$posted->customer->name}) a été comptabilisée.",
+                severity: NotificationSeverity::Success,
+                dedupKey: "invoice_posted.{$posted->id}",
+                companyId: $posted->company_id,
+                entityType: 'invoice',
+                entityId: $posted->id,
+                routeName: 'invoices.show',
+                routeParams: ['invoiceId' => $posted->id],
+            ),
+            exceptUserId: $userId,
+        );
+
+        return $posted;
     }
 
     private function validatePreconditions(Invoice $invoice): void

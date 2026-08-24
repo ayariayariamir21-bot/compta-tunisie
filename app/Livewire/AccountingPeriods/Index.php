@@ -3,11 +3,15 @@
 namespace App\Livewire\AccountingPeriods;
 
 use App\Enums\AuditAction;
+use App\Enums\CompanyRole;
+use App\Enums\NotificationSeverity;
 use App\Models\AccountingPeriod;
+use App\Notifications\AccountingNotification;
 use App\Services\CurrentAccountingPeriod;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
+use App\Services\Security\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -46,6 +50,22 @@ class Index extends Component
             "Période clôturée : {$accountingPeriod->name}.",
             company: $currentCompany,
             entity: $accountingPeriod,
+        );
+
+        app(NotificationService::class)->notifyCompanyRoles(
+            $currentCompany,
+            [CompanyRole::Admin, CompanyRole::Accountant],
+            new AccountingNotification(
+                title: 'Période clôturée',
+                message: "La période « {$accountingPeriod->name} » a été clôturée.",
+                severity: NotificationSeverity::Warning,
+                dedupKey: "accounting_period_closed.{$accountingPeriod->id}",
+                companyId: $currentCompany->id,
+                entityType: 'accounting_period',
+                entityId: $accountingPeriod->id,
+                routeName: 'accounting-periods.index',
+            ),
+            exceptUserId: (int) Auth::id(),
         );
 
         session()->flash('success', "La période « {$accountingPeriod->name} » a été clôturée.");

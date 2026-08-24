@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Enums\AuditAction;
 use App\Enums\CompanyRole;
+use App\Enums\NotificationSeverity;
 use App\Models\Company;
 use App\Models\User;
+use App\Notifications\SecurityNotification;
 use App\Services\Security\AuditLogService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -19,11 +21,17 @@ class CompanyMembershipService
 {
     public function __construct(
         private ?AuditLogService $auditLog = null,
+        private ?Security\NotificationService $notifications = null,
     ) {}
 
     private function audits(): AuditLogService
     {
         return $this->auditLog ?? new AuditLogService;
+    }
+
+    private function notifications(): Security\NotificationService
+    {
+        return $this->notifications ?? new Security\NotificationService;
     }
 
     /**
@@ -33,7 +41,7 @@ class CompanyMembershipService
     {
         $this->assertMembershipExists($company, $member);
 
-        DB::transaction(function () use ($company, $member, $role): void {
+        $previousRole = DB::transaction(function () use ($company, $member, $role): ?CompanyRole {
             $membership = $this->lockMembership($company, $member);
 
             $isCurrentlyActiveAdmin = $membership->role === CompanyRole::Admin->value
@@ -62,7 +70,23 @@ class CompanyMembershipService
                     after: ['member_email' => $member->email, 'role' => $role->label()],
                 );
             }
+
+            return $previousRole !== $role ? $previousRole : null;
         });
+
+        // Delivered after the transaction commits so a rollback never leaves
+        // a notification describing a change that did not happen.
+        if ($previousRole instanceof CompanyRole) {
+            $this->notifications()->notifyUser($member, new SecurityNotification(
+                title: 'Rôle modifié',
+                message: "Votre rôle dans {$company->name} a été modifié de {$previousRole->label()} à {$role->label()}.",
+                severity: NotificationSeverity::Info,
+                dedupKey: "role_changed.{$company->id}.{$member->id}.{$previousRole->value}.{$role->value}",
+                companyId: $company->id,
+                entityType: 'company',
+                entityId: $company->id,
+            ));
+        }
     }
 
     /**
@@ -96,6 +120,16 @@ class CompanyMembershipService
                 entity: $member,
             );
         });
+
+        $this->notifications()->notifyUser($member, new SecurityNotification(
+            title: 'Accès rétabli',
+            message: "Votre accès à {$company->name} a été rétabli.",
+            severity: NotificationSeverity::Success,
+            dedupKey: "membership_activated.{$company->id}.{$member->id}",
+            companyId: $company->id,
+            entityType: 'company',
+            entityId: $company->id,
+        ));
     }
 
     /**
@@ -151,6 +185,21 @@ class CompanyMembershipService
                 entity: $member,
             );
         });
+
+        if (! $remove) {
+            // The membership is now inactive; the notification is still
+            // delivered because the recipient selection for personal
+            // notifications does not depend on any membership.
+            $this->notifications()->notifyUser($member, new SecurityNotification(
+                title: 'Accès révoqué',
+                message: "Votre accès à {$company->name} a été révoqué.",
+                severity: NotificationSeverity::Warning,
+                dedupKey: "membership_deactivated.{$company->id}.{$member->id}",
+                companyId: $company->id,
+                entityType: 'company',
+                entityId: $company->id,
+            ));
+        }
     }
 
     private function assertMembershipExists(Company $company, User $member): void

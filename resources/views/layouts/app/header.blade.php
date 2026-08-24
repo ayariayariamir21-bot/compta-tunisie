@@ -41,6 +41,10 @@
                 </flux:tooltip>
             </flux:navbar>
 
+            @if (auth()->check())
+                <livewire:notifications.dropdown />
+            @endif
+
             <x-desktop-user-menu />
         </flux:header>
 

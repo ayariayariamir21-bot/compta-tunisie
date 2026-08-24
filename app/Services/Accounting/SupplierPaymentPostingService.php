@@ -3,16 +3,21 @@
 namespace App\Services\Accounting;
 
 use App\Enums\AuditAction;
+use App\Enums\CompanyRole;
 use App\Enums\JournalEntryStatus;
+use App\Enums\NotificationSeverity;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Enums\SupplierPaymentStatus;
 use App\Models\Account;
+use App\Models\Company;
 use App\Models\CompanyAccountingSetting;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\PurchaseInvoice;
 use App\Models\SupplierPayment;
+use App\Notifications\BusinessNotification;
 use App\Services\Security\AuditLogService;
+use App\Services\Security\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +36,7 @@ class SupplierPaymentPostingService
 
     public function post(SupplierPayment $payment, int $userId): SupplierPayment
     {
-        return DB::transaction(function () use ($payment, $userId): SupplierPayment {
+        $posted = DB::transaction(function () use ($payment, $userId): SupplierPayment {
             // Row-level lock serializes concurrent postings of the same payment.
             /** @var SupplierPayment $locked */
             $locked = SupplierPayment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
@@ -163,13 +168,33 @@ class SupplierPaymentPostingService
 
             $this->audits()->logAction(
                 AuditAction::SupplierPaymentPosted,
-                "R\u{e8}glement fournisseur comptabilis\u{e9} : {$locked->payment_number}.",
+                "Règlement fournisseur comptabilisé : {$locked->payment_number}.",
                 entity: $locked,
                 metadata: ['payment_number' => $locked->payment_number, 'amount' => (string) $locked->amount, 'journal_entry_number' => $journalEntry->entry_number],
             );
 
             return $locked;
         });
+
+        // Delivered after the accounting transaction commits.
+        app(NotificationService::class)->notifyCompanyRoles(
+            Company::query()->findOrFail($posted->company_id),
+            CompanyRole::operationalRoles(),
+            new BusinessNotification(
+                title: 'Règlement fournisseur comptabilisé',
+                message: "Le règlement {$posted->payment_number} ({$posted->supplier->name}) a été comptabilisé.",
+                severity: NotificationSeverity::Success,
+                dedupKey: "supplier_payment_posted.{$posted->id}",
+                companyId: $posted->company_id,
+                entityType: 'supplier_payment',
+                entityId: $posted->id,
+                routeName: 'supplier-payments.show',
+                routeParams: ['supplierPaymentId' => $posted->id],
+            ),
+            exceptUserId: $userId,
+        );
+
+        return $posted;
     }
 
     private function validatePreconditions(SupplierPayment $payment): void
