@@ -102,7 +102,11 @@ class Index extends Component
 
         if ($company && $fiscalYear) {
             $query = Account::where('company_id', $company->id)
-                ->where('fiscal_year_id', $fiscalYear->id);
+                ->where('fiscal_year_id', $fiscalYear->id)
+                // Eager-loaded once for the whole tree instead of per-row
+                // lazy loads and EXISTS probes in the Blade.
+                ->with('fiscalYear')
+                ->withCount('children');
 
             if ($this->search !== '') {
                 $search = $this->search;

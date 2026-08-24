@@ -59,9 +59,10 @@ class GeneralLedger extends Component
                 $targetAccounts = $accounts->where('id', $this->accountId);
             }
 
-            foreach ($targetAccounts as $account) {
-                $summary = $generalLedgerService->getLedgerSummary($account, $company, $fiscalYear, $filters);
+            // Batched: two queries total instead of two per account.
+            $summaries = $generalLedgerService->getLedgerSummaries($targetAccounts, $company, $fiscalYear, $filters);
 
+            foreach ($summaries as $summary) {
                 if ($summary['lines']->isNotEmpty() || $summary['opening_balance'] !== '0.000') {
                     $ledgerData[] = $summary;
                 }

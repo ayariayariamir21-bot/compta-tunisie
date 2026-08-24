@@ -60,7 +60,7 @@
                 {{ $account->is_active ? 'Désactiver' : 'Activer' }}
             </button>
 
-            @if (! $account->hasChildren())
+            @if (! ($account->children_count > 0))
                 <button
                     wire:click="delete({{ $account->id }})"
                     wire:confirm="Supprimer le compte « {{ $account->name }} » ?"

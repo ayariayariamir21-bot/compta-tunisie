@@ -8,6 +8,9 @@ use App\Models\Backup;
 use App\Models\User;
 use App\Notifications\SecurityNotification;
 use App\Policies\BackupPolicy;
+use App\Services\CurrentAccountingPeriod;
+use App\Services\CurrentCompany;
+use App\Services\CurrentFiscalYear;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\NotificationService;
 use Carbon\CarbonImmutable;
@@ -34,6 +37,13 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AuditLogService::class);
+
+        // Context resolvers are memoized per request (keyed by the session
+        // inputs and acting user) so repeated lookups on one page do not
+        // re-query memberships; switching context re-resolves safely.
+        $this->app->singleton(CurrentCompany::class);
+        $this->app->singleton(CurrentFiscalYear::class);
+        $this->app->singleton(CurrentAccountingPeriod::class);
     }
 
     /**

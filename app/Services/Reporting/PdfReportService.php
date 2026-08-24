@@ -80,9 +80,10 @@ final class PdfReportService
                 $ledgerData[] = $summary;
             }
         } else {
-            foreach ($this->generalLedgerService->getAccountsForContext($company, $fiscalYear) as $account) {
-                $summary = $this->generalLedgerService->getLedgerSummary($account, $company, $fiscalYear, $filters);
+            $accounts = $this->generalLedgerService->getAccountsForContext($company, $fiscalYear);
 
+            // Batched: two queries total instead of two per account.
+            foreach ($this->generalLedgerService->getLedgerSummaries($accounts, $company, $fiscalYear, $filters) as $summary) {
                 if ($summary['lines']->isNotEmpty() || $summary['opening_balance'] !== '0.000') {
                     $ledgerData[] = $summary;
                 }
