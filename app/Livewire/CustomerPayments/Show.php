@@ -96,9 +96,13 @@ class Show extends Component
     {
         $company = $currentCompany->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var CustomerPayment|null $payment */
         $payment = CustomerPayment::where('id', $this->paymentId)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->with([
                 'customer', 'paymentMethod', 'journal', 'destinationAccount',
                 'fiscalYear', 'accountingPeriod',

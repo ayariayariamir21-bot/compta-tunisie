@@ -8,11 +8,20 @@ use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Edit extends Component
 {
     public ?Company $company = null;
+
+    /**
+     * Identity of the edited company. Marked locked because hydrated
+     * component state is client-influenced; mutations always re-resolve
+     * and re-authorize against this id server-side.
+     */
+    #[Locked]
+    public ?int $companyId = null;
 
     public string $name = '';
 
@@ -44,6 +53,7 @@ class Edit extends Component
             abort(403);
         }
 
+        $this->companyId = $company->id;
         $this->company = $company;
         $this->name = $company->name;
         $this->legal_name = $company->legal_name;
@@ -96,22 +106,40 @@ class Edit extends Component
 
     public function update(SecurityAuditLogService $auditLog): void
     {
+        $company = $this->authorizedCompany();
+
         $validated = $this->validate();
 
-        $before = $auditLog->snapshot($this->company, ['name', 'legal_name', 'tax_identifier', 'email', 'currency', 'country']);
+        $before = $auditLog->snapshot($company, ['name', 'legal_name', 'tax_identifier', 'email', 'currency', 'country']);
 
-        $this->company->update($validated);
+        $company->update($validated);
 
         $auditLog->logModelUpdated(
-            $this->company,
+            $company,
             AuditAction::CompanyUpdated,
             $before,
-            $auditLog->snapshot($this->company, ['name', 'legal_name', 'tax_identifier', 'email', 'currency', 'country']),
+            $auditLog->snapshot($company, ['name', 'legal_name', 'tax_identifier', 'email', 'currency', 'country']),
         );
 
         session()->flash('success', 'La société a été mise à jour avec succès.');
 
         $this->redirect(route('companies.index'), navigate: true);
+    }
+
+    /**
+     * Re-resolve the edited company from the locked id on every mutation
+     * and re-run the policy: hydrated model properties are client-
+     * influenced and must never be trusted for authorization.
+     */
+    private function authorizedCompany(): Company
+    {
+        $company = Company::findOrFail((int) $this->companyId);
+
+        if (Auth::user()->cannot('update', $company)) {
+            abort(403);
+        }
+
+        return $company;
     }
 
     public function render(): View

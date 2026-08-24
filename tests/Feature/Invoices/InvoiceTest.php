@@ -6,7 +6,6 @@ use App\Enums\QuoteStatus;
 use App\Livewire\Invoices\Create;
 use App\Livewire\Invoices\Edit;
 use App\Livewire\Invoices\Index;
-use App\Livewire\Invoices\Show;
 use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\Company;
@@ -887,8 +886,8 @@ it('renders the invoice creation page', function () {
 it('renders the invoice detail page', function () {
     $invoice = createDraftForTest($this);
 
-    $this->actingAs($this->user);
-    Livewire::test(Show::class, ['id' => $invoice->id])
+    $this->actingAs($this->user)
+        ->get(route('invoices.show', ['invoiceId' => $invoice->id]))
         ->assertOk();
 });
 

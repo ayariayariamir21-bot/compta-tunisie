@@ -13,6 +13,11 @@ class Show extends Component
     public function render(CurrentCompany $currentCompany): View
     {
         $company = $currentCompany->get(Auth::user());
+
+        if (! $company) {
+            abort(403);
+        }
+
         $quoteId = request()->route('quoteId');
 
         $quote = Quote::with([
@@ -21,9 +26,9 @@ class Show extends Component
             'customer',
             'creator',
             'company',
-        ])->findOrFail((int) $quoteId);
+        ])->where('company_id', $company->id)->findOrFail((int) $quoteId);
 
-        if ($company && $quote->company_id !== $company->id) {
+        if (Auth::user()->cannot('view', $quote)) {
             abort(403);
         }
 

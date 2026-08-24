@@ -18,11 +18,11 @@ class Show extends Component
 {
     public ?Invoice $invoice = null;
 
-    public function mount(int $id): void
+    public function mount(int $invoiceId): void
     {
         $this->invoice = Invoice::with([
             'lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'fiscalYear', 'accountingPeriod', 'journal', 'journalEntry.lines.account', 'creator',
-        ])->findOrFail($id);
+        ])->findOrFail($invoiceId);
 
         $currentCompany = app(CurrentCompany::class)->get(Auth::user());
         if (! $currentCompany || $this->invoice->company_id !== $currentCompany->id) {

@@ -48,9 +48,13 @@ class Edit extends Component
     {
         $company = app(CurrentCompany::class)->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var SupplierPayment|null $payment */
         $payment = SupplierPayment::where('id', $supplierPaymentId)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->with(['supplier'])
             ->first();
 
@@ -183,9 +187,13 @@ class Edit extends Component
 
         $company = $currentCompany->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var SupplierPayment|null $payment */
         $payment = SupplierPayment::where('id', $this->supplierPaymentId)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->first();
 
         if (! $payment) {
@@ -230,9 +238,13 @@ class Edit extends Component
     {
         $company = $currentCompany->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var SupplierPayment|null $payment */
         $payment = SupplierPayment::where('id', $this->supplierPaymentId ?? 0)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->with([
                 'supplier', 'paymentMethod', 'journal', 'destinationAccount',
                 'fiscalYear', 'accountingPeriod',

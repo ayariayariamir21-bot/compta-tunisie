@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('backups.index');
 
     Route::post('backups', [BackupController::class, 'store'])
+        ->middleware('throttle:backups')
         ->name('backups.create');
 
     Route::get('backups/{backup}/download', [BackupController::class, 'download'])
@@ -49,10 +50,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('backups.download');
 
     Route::post('backups/{backup}/validate', [BackupController::class, 'validate'])
+        ->middleware('throttle:backups')
         ->where('backup', '[A-Za-z0-9\-]+\.dump')
         ->name('backups.validate');
 
     Route::post('backups/{backup}/restore', [BackupController::class, 'restore'])
+        ->middleware('throttle:backups')
         ->where('backup', '[A-Za-z0-9\-]+\.dump')
         ->name('backups.restore');
 

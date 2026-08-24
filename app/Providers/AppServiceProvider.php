@@ -11,10 +11,13 @@ use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed as AuthFailed;
 use Illuminate\Auth\Events\Login as AuthLogin;
 use Illuminate\Auth\Events\Logout as AuthLogout;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
@@ -37,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->registerBackupPolicy();
+        $this->configureRateLimiting();
         $this->listenForAuditEvents();
     }
 
@@ -47,6 +51,22 @@ class AppServiceProvider extends ServiceProvider
     protected function registerBackupPolicy(): void
     {
         Gate::policy(Backup::class, BackupPolicy::class);
+    }
+
+    /**
+     * Backup operations shell out to expensive pg_dump/pg_restore processes,
+     * so creation, validation and restoration are throttled per account.
+     * These routes sit behind the auth middleware, so a user is always set.
+     */
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('backups', function (Request $request) {
+            $user = $request->user();
+
+            $identity = $user instanceof User ? 'user-'.$user->id : 'guest';
+
+            return Limit::perMinute(6)->by($identity.'|'.$request->ip());
+        });
     }
 
     /**

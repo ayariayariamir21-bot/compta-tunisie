@@ -55,9 +55,13 @@ class Edit extends Component
     {
         $company = app(CurrentCompany::class)->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var Expense|null $expense */
         $expense = Expense::where('id', $expenseId)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->first();
 
         if (! $expense) {
@@ -175,9 +179,13 @@ class Edit extends Component
 
         $company = $currentCompany->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var Expense|null $expense */
         $expense = Expense::where('id', $this->expenseId)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->first();
 
         if (! $expense) {
@@ -238,9 +246,13 @@ class Edit extends Component
         $company = $currentCompany->get(Auth::user());
         $fiscalYear = app(CurrentFiscalYear::class)->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var Expense|null $expense */
         $expense = Expense::where('id', $this->expenseId ?? 0)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->with(['supplier', 'paymentMethod', 'journal'])
             ->first();
 
@@ -248,44 +260,36 @@ class Edit extends Component
             abort(404);
         }
 
-        $suppliers = collect();
-        $methods = collect();
-        $journals = collect();
-        $expenseAccounts = collect();
-        $taxRates = collect();
+        $suppliers = Supplier::where('company_id', $company->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        if ($company) {
-            $suppliers = Supplier::where('company_id', $company->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
+        $methods = PaymentMethod::where('company_id', $company->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
 
-            $methods = PaymentMethod::where('company_id', $company->id)
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->get();
+        $journalsQuery = Journal::where('company_id', $company->id)
+            ->where('is_active', true)
+            ->where('type', 'operations_diverses');
 
-            $journalsQuery = Journal::where('company_id', $company->id)
-                ->where('is_active', true)
-                ->where('type', 'operations_diverses');
+        $accountsQuery = Account::where('company_id', $company->id)
+            ->where('is_active', true)
+            ->where('account_type', 'expense');
 
-            $accountsQuery = Account::where('company_id', $company->id)
-                ->where('is_active', true)
-                ->where('account_type', 'expense');
-
-            if ($fiscalYear) {
-                $journalsQuery->where('fiscal_year_id', $fiscalYear->id);
-                $accountsQuery->where('fiscal_year_id', $fiscalYear->id);
-            }
-
-            $journals = $journalsQuery->orderBy('code')->get();
-            $expenseAccounts = $accountsQuery->orderBy('code')->get();
-
-            $taxRates = TaxRate::where('company_id', $company->id)
-                ->where('is_active', true)
-                ->orderBy('rate')
-                ->get();
+        if ($fiscalYear) {
+            $journalsQuery->where('fiscal_year_id', $fiscalYear->id);
+            $accountsQuery->where('fiscal_year_id', $fiscalYear->id);
         }
+
+        $journals = $journalsQuery->orderBy('code')->get();
+        $expenseAccounts = $accountsQuery->orderBy('code')->get();
+
+        $taxRates = TaxRate::where('company_id', $company->id)
+            ->where('is_active', true)
+            ->orderBy('rate')
+            ->get();
 
         return view('livewire.expenses.edit', [
             'expense' => $expense,

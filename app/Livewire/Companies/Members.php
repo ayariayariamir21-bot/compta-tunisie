@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use RuntimeException;
 
@@ -19,6 +20,7 @@ class Members extends Component
     /** @var list<array{id: int, name: string, email: string, role: string, is_active: bool, is_last_admin: bool}> */
     public array $members = [];
 
+    #[Locked]
     public ?int $companyId = null;
 
     public function mount(CurrentCompany $currentCompany): void
@@ -172,6 +174,8 @@ class Members extends Component
 
     public function render(): View
     {
+        $this->authorizeManagement();
+
         return view('livewire.companies.members');
     }
 }

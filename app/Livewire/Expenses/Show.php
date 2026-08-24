@@ -96,9 +96,13 @@ class Show extends Component
     {
         $company = $currentCompany->get(Auth::user());
 
+        if (! $company) {
+            abort(403);
+        }
+
         /** @var Expense|null $expense */
         $expense = Expense::where('id', $this->expenseId)
-            ->when($company !== null, fn ($q) => $q->where('company_id', $company->id))
+            ->where('company_id', $company->id)
             ->with([
                 'supplier', 'paymentMethod', 'journal', 'fiscalYear', 'accountingPeriod',
                 'lines.expenseAccount', 'lines.taxRate',

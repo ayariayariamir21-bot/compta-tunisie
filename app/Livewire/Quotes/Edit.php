@@ -41,8 +41,18 @@ class Edit extends Component
     {
         $quote = Quote::with('lines')->findOrFail($quoteId);
 
+        $company = app(CurrentCompany::class)->get(Auth::user());
+
+        if (! $company || $quote->company_id !== $company->id) {
+            abort(403);
+        }
+
         if ($quote->status->value !== QuoteStatus::DRAFT->value) {
             abort(403, 'Seul un devis en brouillon peut être modifié.');
+        }
+
+        if (Auth::user()->cannot('update', $quote)) {
+            abort(403);
         }
 
         $this->quoteId = $quote->id;

@@ -49,8 +49,18 @@ class Edit extends Component
     {
         $invoice = Invoice::with('lines')->findOrFail($invoiceId);
 
+        $company = app(CurrentCompany::class)->get(Auth::user());
+
+        if (! $company || $invoice->company_id !== $company->id) {
+            abort(403);
+        }
+
         if ($invoice->status !== InvoiceStatus::DRAFT) {
             abort(403, 'Seule une facture en brouillon peut être modifiée.');
+        }
+
+        if (Auth::user()->cannot('update', $invoice)) {
+            abort(403);
         }
 
         $this->invoiceId = $invoice->id;
