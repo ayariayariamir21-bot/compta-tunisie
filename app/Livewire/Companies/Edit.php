@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Companies;
 
+use App\Enums\AuditAction;
 use App\Models\Company;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -92,11 +94,20 @@ class Edit extends Component
         ];
     }
 
-    public function update(): void
+    public function update(SecurityAuditLogService $auditLog): void
     {
         $validated = $this->validate();
 
+        $before = $auditLog->snapshot($this->company, ['name', 'legal_name', 'tax_identifier', 'email', 'currency', 'country']);
+
         $this->company->update($validated);
+
+        $auditLog->logModelUpdated(
+            $this->company,
+            AuditAction::CompanyUpdated,
+            $before,
+            $auditLog->snapshot($this->company, ['name', 'legal_name', 'tax_identifier', 'email', 'currency', 'country']),
+        );
 
         session()->flash('success', 'La société a été mise à jour avec succès.');
 

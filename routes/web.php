@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Reports\PdfReportController;
+use App\Livewire\AuditLogs\Index as AuditLogsIndex;
 use App\Livewire\Companies\Create;
 use App\Livewire\Companies\Edit;
 use App\Livewire\Companies\Index;
@@ -31,6 +32,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('company/members', Members::class)
         ->name('companies.members');
+
+    Route::get('audit-logs', AuditLogsIndex::class)
+        ->name('audit-logs.index');
 
     Route::get('fiscal-years', App\Livewire\FiscalYears\Index::class)
         ->name('fiscal-years.index');

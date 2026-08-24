@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Enums\ExpenseStatus;
 use App\Enums\JournalEntryStatus;
 use App\Enums\JournalType;
@@ -11,6 +12,7 @@ use App\Models\Expense;
 use App\Models\ExpenseLine;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Services\Security\AuditLogService;
 use App\Services\SupplierPaymentService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +22,13 @@ class ExpensePostingService
     public function __construct(
         private JournalEntryService $journalEntryService,
         private SupplierPaymentService $supplierPaymentService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     public function post(Expense $expense, int $userId): Expense
     {
@@ -60,7 +68,16 @@ class ExpensePostingService
                 'journal_entry_id' => $journalEntry->id,
             ]);
 
-            return $expense->fresh(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod']);
+            $expense = $expense->fresh(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod']);
+
+            $this->audits()->logAction(
+                AuditAction::ExpensePosted,
+                "D\u{e9}pense comptabilis\u{e9}e : {$expense->expense_number}.",
+                entity: $expense,
+                metadata: ['expense_number' => $expense->expense_number, 'total' => (string) $expense->total, 'journal_entry_number' => $journalEntry->entry_number],
+            );
+
+            return $expense;
         });
     }
 

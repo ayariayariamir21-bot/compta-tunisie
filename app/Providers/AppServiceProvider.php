@@ -2,11 +2,20 @@
 
 namespace App\Providers;
 
+use App\Enums\AuditAction;
+use App\Models\User;
+use App\Services\Security\AuditLogService;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Failed as AuthFailed;
+use Illuminate\Auth\Events\Login as AuthLogin;
+use Illuminate\Auth\Events\Logout as AuthLogout;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
+use Laravel\Fortify\Events\TwoFactorAuthenticationEnabled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(AuditLogService::class);
     }
 
     /**
@@ -24,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->listenForAuditEvents();
     }
 
     /**
@@ -46,5 +56,41 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Record authentication and two-factor events in the audit journal.
+     */
+    protected function listenForAuditEvents(): void
+    {
+        Event::listen(function (AuthLogin $event): void {
+            if ($event->user instanceof User) {
+                app(AuditLogService::class)->log(AuditAction::Login, description: 'Connexion réussie.', user: $event->user);
+            }
+        });
+
+        Event::listen(function (AuthFailed $event): void {
+            $credentials = $event->credentials;
+
+            app(AuditLogService::class)->logAction(
+                AuditAction::LoginFailed,
+                'Échec de connexion.',
+                metadata: ['attempted_email' => is_string($credentials['email'] ?? null) ? $credentials['email'] : null],
+            );
+        });
+
+        Event::listen(function (AuthLogout $event): void {
+            if ($event->user instanceof User) {
+                app(AuditLogService::class)->log(AuditAction::Logout, description: 'Déconnexion.', user: $event->user);
+            }
+        });
+
+        Event::listen(function (TwoFactorAuthenticationEnabled $event): void {
+            app(AuditLogService::class)->log(AuditAction::TwoFactorEnabled, description: 'Authentification à deux facteurs activée.', user: $event->user);
+        });
+
+        Event::listen(function (TwoFactorAuthenticationDisabled $event): void {
+            app(AuditLogService::class)->log(AuditAction::TwoFactorDisabled, description: 'Authentification à deux facteurs désactivée.', user: $event->user);
+        });
     }
 }

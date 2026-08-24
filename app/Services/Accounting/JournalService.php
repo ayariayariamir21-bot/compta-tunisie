@@ -2,12 +2,23 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Journal;
+use App\Services\Security\AuditLogService;
 
 class JournalService
 {
+    public function __construct(
+        private ?AuditLogService $auditLog = null,
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Create a new journal with full validation.
      *
@@ -30,7 +41,7 @@ class JournalService
 
         $this->validateCode($data['code'], $company->id, $fiscalYear->id);
 
-        return Journal::create([
+        $journal = Journal::create([
             'company_id' => $company->id,
             'fiscal_year_id' => $fiscalYear->id,
             'code' => $data['code'],
@@ -38,6 +49,10 @@ class JournalService
             'type' => $data['type'],
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        $this->audits()->logModelCreated($journal, AuditAction::JournalCreated);
+
+        return $journal;
     }
 
     /**
@@ -60,6 +75,8 @@ class JournalService
             $journal->id,
         );
 
+        $before = $this->audits()->snapshot($journal, ['code', 'name', 'type', 'is_active']);
+
         $journal->update([
             'code' => $data['code'],
             'name' => $data['name'],
@@ -67,7 +84,16 @@ class JournalService
             'is_active' => $data['is_active'] ?? $journal->is_active,
         ]);
 
-        return $journal->fresh();
+        $journal = $journal->fresh();
+
+        $this->audits()->logModelUpdated(
+            $journal,
+            AuditAction::JournalUpdated,
+            $before,
+            $this->audits()->snapshot($journal, ['code', 'name', 'type', 'is_active']),
+        );
+
+        return $journal;
     }
 
     /**

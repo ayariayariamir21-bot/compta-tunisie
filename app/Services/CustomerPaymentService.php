@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\CreditNoteStatus;
 use App\Enums\CustomerPaymentStatus;
 use App\Enums\InvoiceStatus;
@@ -18,6 +19,8 @@ use App\Models\Invoice;
 use App\Models\Journal;
 use App\Models\PaymentMethod;
 use App\Services\Accounting\CustomerPaymentPostingService;
+use App\Services\Security\AuditLogService;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +28,13 @@ class CustomerPaymentService
 {
     public function __construct(
         private CustomerPaymentPostingService $postingService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): SecurityAuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     /**
      * Numbering strategy: REG-{YEAR}-{NNNNNN} scoped per company (REG = Règlement).
@@ -138,7 +147,11 @@ class CustomerPaymentService
                 ]);
             }
 
-            return $payment->fresh(['allocations.invoice', 'customer', 'paymentMethod', 'journal', 'destinationAccount']);
+            $payment = $payment->fresh(['allocations.invoice', 'customer', 'paymentMethod', 'journal', 'destinationAccount']);
+
+            $this->audits()->logModelCreated($payment, AuditAction::CustomerPaymentCreated);
+
+            return $payment;
         });
     }
 
@@ -186,7 +199,11 @@ class CustomerPaymentService
                 );
             }
 
-            return $payment->fresh(['allocations.invoice', 'customer', 'paymentMethod', 'journal', 'destinationAccount']);
+            $payment = $payment->fresh(['allocations.invoice', 'customer', 'paymentMethod', 'journal', 'destinationAccount']);
+
+            $this->audits()->logModelCreated($payment, AuditAction::CustomerPaymentCreated);
+
+            return $payment;
         });
     }
 
@@ -410,9 +427,18 @@ class CustomerPaymentService
             throw new \InvalidArgumentException('Seul un règlement en brouillon peut être annulé.');
         }
 
-        $payment->update(['status' => CustomerPaymentStatus::CANCELLED]);
+        return DB::transaction(function () use ($payment) {
+            $payment->update(['status' => CustomerPaymentStatus::CANCELLED]);
 
-        return $payment->fresh();
+            $this->audits()->logAction(
+                AuditAction::CustomerPaymentCancelled,
+                "Règlement client annulé : {$payment->payment_number}.",
+                entity: $payment,
+                metadata: ['payment_number' => $payment->payment_number],
+            );
+
+            return $payment->fresh();
+        });
     }
 
     /**

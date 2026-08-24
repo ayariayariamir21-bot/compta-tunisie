@@ -2,12 +2,23 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Services\Security\AuditLogService;
 
 class AccountService
 {
+    public function __construct(
+        private ?AuditLogService $auditLog = null,
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Create a new account with full validation.
      *
@@ -39,7 +50,7 @@ class AccountService
             throw new \InvalidArgumentException('Un compte avec ce code existe déjà pour cet exercice.');
         }
 
-        return Account::create([
+        $account = Account::create([
             'company_id' => $company->id,
             'fiscal_year_id' => $fiscalYear->id,
             'parent_id' => $data['parent_id'] ?? null,
@@ -49,6 +60,10 @@ class AccountService
             'description' => $data['description'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        $this->audits()->logModelCreated($account, AuditAction::AccountCreated);
+
+        return $account;
     }
 
     /**
@@ -81,6 +96,8 @@ class AccountService
             throw new \InvalidArgumentException('Un compte avec ce code existe déjà pour cet exercice.');
         }
 
+        $before = $this->audits()->snapshot($account, ['code', 'name', 'account_type', 'is_active']);
+
         $account->update([
             'parent_id' => $data['parent_id'] ?? null,
             'code' => $data['code'],
@@ -90,7 +107,16 @@ class AccountService
             'is_active' => $data['is_active'] ?? $account->is_active,
         ]);
 
-        return $account->fresh();
+        $account = $account->fresh();
+
+        $this->audits()->logModelUpdated(
+            $account,
+            AuditAction::AccountUpdated,
+            $before,
+            $this->audits()->snapshot($account, ['code', 'name', 'account_type', 'is_active']),
+        );
+
+        return $account;
     }
 
     /**
@@ -104,7 +130,18 @@ class AccountService
             throw new \InvalidArgumentException('Impossible de modifier un compte sur un exercice clôturé.');
         }
 
+        $wasActive = $account->is_active;
+
         $account->update(['is_active' => ! $account->is_active]);
+
+        if ($wasActive) {
+            $this->audits()->logAction(
+                AuditAction::AccountDeactivated,
+                "Compte d\u{e9}sactiv\u{e9} : {$account->code} - {$account->name}.",
+                entity: $account,
+                metadata: ['code' => $account->code],
+            );
+        }
 
         return $account->fresh();
     }

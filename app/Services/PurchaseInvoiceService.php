@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\JournalType;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Models\Account;
@@ -14,6 +15,8 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceLine;
 use App\Models\Supplier;
 use App\Models\TaxRate;
+use App\Services\Security\AuditLogService;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +24,13 @@ class PurchaseInvoiceService
 {
     public function __construct(
         private PurchaseInvoicePostingService $postingService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): SecurityAuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     /**
      * @param  array{company_id: int, supplier_id: int, fiscal_year_id: int, accounting_period_id: int, journal_id: int, invoice_date: string, due_date?: string|null, supplier_invoice_number?: string|null, currency?: string, payment_terms_days?: int, notes?: string|null, created_by: int, lines: array<int, array{product_id: int, description: string, quantity: string, unit: string, unit_price: string, discount_percent: string, tax_rate_id?: int|null}>}  $data
@@ -61,7 +70,11 @@ class PurchaseInvoiceService
             $this->syncLines($invoice, $linesData, $companyId);
             $this->calculateTotals($invoice);
 
-            return $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.purchaseAccount', 'supplier']);
+            $invoice = $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.purchaseAccount', 'supplier']);
+
+            $this->audits()->logModelCreated($invoice, AuditAction::PurchaseInvoiceCreated);
+
+            return $invoice;
         });
     }
 

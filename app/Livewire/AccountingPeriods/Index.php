@@ -2,10 +2,12 @@
 
 namespace App\Livewire\AccountingPeriods;
 
+use App\Enums\AuditAction;
 use App\Models\AccountingPeriod;
 use App\Services\CurrentAccountingPeriod;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -38,6 +40,13 @@ class Index extends Component
         if ($current && $current->id === $accountingPeriod->id) {
             $currentAccountingPeriod->clear();
         }
+
+        app(SecurityAuditLogService::class)->logAction(
+            AuditAction::AccountingPeriodClosed,
+            "Période clôturée : {$accountingPeriod->name}.",
+            company: $currentCompany,
+            entity: $accountingPeriod,
+        );
 
         session()->flash('success', "La période « {$accountingPeriod->name} » a été clôturée.");
 

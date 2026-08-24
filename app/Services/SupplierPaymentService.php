@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\JournalType;
 use App\Enums\PaymentMethodType;
 use App\Enums\PurchaseInvoiceStatus;
@@ -17,6 +18,8 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\SupplierPaymentAllocation;
 use App\Services\Accounting\SupplierPaymentPostingService;
+use App\Services\Security\AuditLogService;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +27,13 @@ class SupplierPaymentService
 {
     public function __construct(
         private SupplierPaymentPostingService $postingService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): SecurityAuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     /**
      * Numbering strategy: REG-ACH-{YEAR}-{NNNNNN} scoped per company
@@ -138,7 +147,11 @@ class SupplierPaymentService
                 ]);
             }
 
-            return $payment->fresh(['allocations.purchaseInvoice', 'supplier', 'paymentMethod', 'journal', 'destinationAccount']);
+            $payment = $payment->fresh(['allocations.purchaseInvoice', 'supplier', 'paymentMethod', 'journal', 'destinationAccount']);
+
+            $this->audits()->logModelCreated($payment, AuditAction::SupplierPaymentCreated);
+
+            return $payment;
         });
     }
 
@@ -410,7 +423,16 @@ class SupplierPaymentService
             throw new \InvalidArgumentException('Seul un règlement en brouillon peut être annulé.');
         }
 
-        $payment->update(['status' => SupplierPaymentStatus::CANCELLED]);
+        DB::transaction(function () use ($payment): void {
+            $payment->update(['status' => SupplierPaymentStatus::CANCELLED]);
+
+            $this->audits()->logAction(
+                AuditAction::SupplierPaymentCancelled,
+                "R\u{e8}glement fournisseur annul\u{e9} : {$payment->payment_number}.",
+                entity: $payment,
+                metadata: ['payment_number' => $payment->payment_number],
+            );
+        });
 
         return $payment->fresh();
     }

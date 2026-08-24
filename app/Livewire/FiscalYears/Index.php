@@ -2,9 +2,11 @@
 
 namespace App\Livewire\FiscalYears;
 
+use App\Enums\AuditAction;
 use App\Models\FiscalYear;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -31,6 +33,13 @@ class Index extends Component
 
         $currentFiscalYear->set(Auth::user(), $fiscalYear->id);
 
+        app(SecurityAuditLogService::class)->logAction(
+            AuditAction::FiscalYearActivated,
+            "Exercice activé : {$fiscalYear->name}.",
+            company: $currentCompany,
+            entity: $fiscalYear,
+        );
+
         session()->flash('success', "L'exercice « {$fiscalYear->name} » est maintenant actif.");
 
         $this->redirect(route('fiscal-years.index'), navigate: true);
@@ -56,6 +65,13 @@ class Index extends Component
         if ($current && $current->id === $fiscalYear->id) {
             $currentFiscalYear->clear();
         }
+
+        app(SecurityAuditLogService::class)->logAction(
+            AuditAction::FiscalYearClosed,
+            "Exercice clôturé : {$fiscalYear->name}.",
+            company: $currentCompany,
+            entity: $fiscalYear,
+        );
 
         session()->flash('success', "L'exercice « {$fiscalYear->name} » a été clôturé.");
 

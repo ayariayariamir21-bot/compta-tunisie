@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\InvoiceStatus;
 use App\Enums\JournalEntryStatus;
 use App\Models\Account;
@@ -11,6 +12,7 @@ use App\Models\InvoiceLine;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Security\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +20,13 @@ class SalesInvoicePostingService
 {
     public function __construct(
         private JournalEntryService $journalEntryService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     public function post(Invoice $invoice, int $userId): Invoice
     {
@@ -50,7 +58,16 @@ class SalesInvoicePostingService
                 'journal_entry_id' => $journalEntry->id,
             ]);
 
-            return $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod']);
+            $invoice = $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod']);
+
+            $this->audits()->logAction(
+                AuditAction::InvoicePosted,
+                "Facture comptabilisée : {$invoice->invoice_number}.",
+                entity: $invoice,
+                metadata: ['invoice_number' => $invoice->invoice_number, 'total' => (string) $invoice->total, 'journal_entry_number' => $journalEntry->entry_number],
+            );
+
+            return $invoice;
         });
     }
 

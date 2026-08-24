@@ -2,14 +2,25 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\CompanyAccountingSetting;
 use App\Models\Journal;
+use App\Services\Security\AuditLogService;
 use Illuminate\Support\Facades\DB;
 
 class AccountingSettingsService
 {
+    public function __construct(
+
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Get or create accounting settings for a company.
      */
@@ -58,8 +69,17 @@ class AccountingSettingsService
 
         $validated = $this->validateDefaults($data, $companyId, $fiscalYearId);
 
-        DB::transaction(function () use ($settings, $validated) {
+        $before = $this->audits()->snapshot($settings, array_keys($validated));
+
+        DB::transaction(function () use ($settings, $validated, $before): void {
             $settings->update($validated);
+
+            $this->audits()->logModelUpdated(
+                $settings,
+                AuditAction::SettingsUpdated,
+                $before,
+                $this->audits()->snapshot($settings, array_keys($validated)),
+            );
         });
 
         return $settings->fresh();

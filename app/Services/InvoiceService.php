@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\InvoiceStatus;
 use App\Enums\QuoteStatus;
 use App\Models\Account;
@@ -16,6 +17,8 @@ use App\Models\Product;
 use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Models\TaxRate;
+use App\Services\Security\AuditLogService;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +26,13 @@ class InvoiceService
 {
     public function __construct(
         private SalesInvoicePostingService $postingService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): SecurityAuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     /**
      * @param  array{company_id: int, customer_id: int, fiscal_year_id: int, accounting_period_id: int, journal_id: int, invoice_date: string, due_date?: string|null, currency: string, payment_terms_days: int, notes?: string|null, terms?: string|null, created_by: int, quote_id?: int|null, lines: array<int, array{product_id: int, description: string, quantity: string, unit: string, unit_price: string, discount_percent: string, tax_rate_id?: int|null}>}  $data
@@ -55,7 +64,11 @@ class InvoiceService
             $this->syncLines($invoice, $linesData, $companyId);
             $this->calculateTotals($invoice);
 
-            return $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer']);
+            $invoice = $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer']);
+
+            $this->audits()->logModelCreated($invoice, AuditAction::InvoiceCreated);
+
+            return $invoice;
         });
     }
 
@@ -81,11 +94,22 @@ class InvoiceService
         }
 
         return DB::transaction(function () use ($invoice, $data, $linesData, $companyId) {
+            $before = $this->audits()->snapshot($invoice, ['invoice_number', 'status', 'customer_id', 'total', 'due_date']);
+
             $invoice->update($data);
             $this->syncLines($invoice, $linesData, $companyId);
             $this->calculateTotals($invoice);
 
-            return $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer']);
+            $invoice = $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer']);
+
+            $this->audits()->logModelUpdated(
+                $invoice,
+                AuditAction::InvoiceUpdated,
+                $before,
+                $this->audits()->snapshot($invoice, ['invoice_number', 'status', 'customer_id', 'total', 'due_date']),
+            );
+
+            return $invoice;
         });
     }
 
@@ -100,9 +124,18 @@ class InvoiceService
             throw new \InvalidArgumentException('Seule une facture en brouillon peut être annulée.');
         }
 
-        $invoice->update(['status' => InvoiceStatus::CANCELLED]);
+        return DB::transaction(function () use ($invoice) {
+            $invoice->update(['status' => InvoiceStatus::CANCELLED]);
 
-        return $invoice->fresh();
+            $this->audits()->logAction(
+                AuditAction::InvoiceCancelled,
+                "Facture annulée : {$invoice->invoice_number}.",
+                entity: $invoice,
+                metadata: ['invoice_number' => $invoice->invoice_number],
+            );
+
+            return $invoice->fresh();
+        });
     }
 
     public function deleteDraft(Invoice $invoice): void

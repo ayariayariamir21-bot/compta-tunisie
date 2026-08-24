@@ -2,13 +2,24 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Enums\PaymentMethodType;
 use App\Models\Company;
 use App\Models\PaymentMethod;
+use App\Services\Security\AuditLogService;
 use Illuminate\Support\Facades\DB;
 
 class PaymentMethodService
 {
+    public function __construct(
+        private ?AuditLogService $auditLog = null,
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Create a new payment method.
      *
@@ -31,7 +42,7 @@ class PaymentMethodService
                 $this->clearDefaults($company->id);
             }
 
-            return PaymentMethod::create([
+            $paymentMethod = PaymentMethod::create([
                 'company_id' => $company->id,
                 'code' => strtoupper($data['code']),
                 'name' => $data['name'],
@@ -41,6 +52,10 @@ class PaymentMethodService
                 'sort_order' => $data['sort_order'] ?? 0,
                 'description' => $data['description'] ?? null,
             ]);
+
+            $this->audits()->logModelCreated($paymentMethod, AuditAction::PaymentMethodCreated);
+
+            return $paymentMethod;
         });
     }
 
@@ -74,7 +89,9 @@ class PaymentMethodService
             );
         }
 
-        return DB::transaction(function () use ($paymentMethod, $data, $isDefault) {
+        $before = $this->audits()->snapshot($paymentMethod, ['code', 'name', 'type', 'is_active', 'is_default']);
+
+        return DB::transaction(function () use ($paymentMethod, $data, $isDefault, $before) {
             if ($isDefault && ! $paymentMethod->is_default) {
                 $this->clearDefaults($paymentMethod->company_id);
             }
@@ -89,7 +106,16 @@ class PaymentMethodService
                 'description' => $data['description'] ?? null,
             ]);
 
-            return $paymentMethod->fresh();
+            $paymentMethod = $paymentMethod->fresh();
+
+            $this->audits()->logModelUpdated(
+                $paymentMethod,
+                AuditAction::PaymentMethodUpdated,
+                $before,
+                $this->audits()->snapshot($paymentMethod, ['code', 'name', 'type', 'is_active', 'is_default']),
+            );
+
+            return $paymentMethod;
         });
     }
 

@@ -130,6 +130,20 @@
                         {{ __('Relevé fournisseur') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
+
+                @php
+                    $auditCompany = auth()->check()
+                        ? app(\App\Services\CurrentCompany::class)->get(auth()->user())
+                        : null;
+                @endphp
+
+                @if ($auditCompany && auth()->user()->can('viewAny', [\App\Models\AuditLog::class, $auditCompany]))
+                    <flux:sidebar.group :heading="__('Sécurité')" class="grid">
+                        <flux:sidebar.item icon="shield-check" :href="route('audit-logs.index')" :current="request()->routeIs('audit-logs.*')" wire:navigate>
+                            {{ __('Journal d’audit') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endif
             </flux:sidebar.nav>
 
             <flux:spacer />

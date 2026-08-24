@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AccountType;
+use App\Enums\AuditAction;
 use App\Enums\ExpenseStatus;
 use App\Enums\JournalType;
 use App\Models\Account;
@@ -15,6 +16,8 @@ use App\Models\Journal;
 use App\Models\Supplier;
 use App\Models\TaxRate;
 use App\Services\Accounting\ExpensePostingService;
+use App\Services\Security\AuditLogService;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +25,13 @@ class ExpenseService
 {
     public function __construct(
         private ExpensePostingService $postingService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): SecurityAuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     /**
      * @param  array{company_id: int, supplier_id?: int|null, fiscal_year_id: int, accounting_period_id: int, journal_id: int, payment_method_id?: int|null, expense_date: string, due_date?: string|null, reference?: string|null, description?: string|null, notes?: string|null, created_by: int, lines: array<int, array{expense_account_id: int, label: string, quantity?: string|null, unit_price: string, discount_percent: string, tax_rate_id?: int|null}>}  $data
@@ -59,7 +68,11 @@ class ExpenseService
             $this->syncLines($expense, $linesData, $companyId, (int) $data['fiscal_year_id']);
             $this->calculateTotals($expense);
 
-            return $expense->fresh(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod']);
+            $expense = $expense->fresh(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod']);
+
+            $this->audits()->logModelCreated($expense, AuditAction::ExpenseCreated);
+
+            return $expense;
         });
     }
 
@@ -93,7 +106,11 @@ class ExpenseService
             $this->syncLines($expense, $linesData, $companyId, $expense->fiscal_year_id);
             $this->calculateTotals($expense);
 
-            return $expense->fresh(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod']);
+            $expense = $expense->fresh(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod']);
+
+            $this->audits()->logModelCreated($expense, AuditAction::ExpenseCreated);
+
+            return $expense;
         });
     }
 
@@ -108,7 +125,16 @@ class ExpenseService
             throw new \InvalidArgumentException('Seule une dépense en brouillon peut être annulée.');
         }
 
-        $expense->update(['status' => ExpenseStatus::CANCELLED]);
+        DB::transaction(function () use ($expense): void {
+            $expense->update(['status' => ExpenseStatus::CANCELLED]);
+
+            $this->audits()->logAction(
+                AuditAction::ExpenseCancelled,
+                "D\u{e9}pense annul\u{e9}e : {$expense->expense_number}.",
+                entity: $expense,
+                metadata: ['expense_number' => $expense->expense_number],
+            );
+        });
 
         return $expense->fresh();
     }

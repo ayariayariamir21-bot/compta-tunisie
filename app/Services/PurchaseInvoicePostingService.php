@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\JournalEntryStatus;
 use App\Enums\JournalType;
 use App\Enums\PurchaseInvoiceStatus;
@@ -12,6 +13,7 @@ use App\Models\JournalEntryLine;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceLine;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Security\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +21,13 @@ class PurchaseInvoicePostingService
 {
     public function __construct(
         private JournalEntryService $journalEntryService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     public function post(PurchaseInvoice $invoice, int $userId): PurchaseInvoice
     {
@@ -60,7 +68,16 @@ class PurchaseInvoicePostingService
                 'journal_entry_id' => $journalEntry->id,
             ]);
 
-            return $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.purchaseAccount', 'supplier', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod']);
+            $invoice = $invoice->fresh(['lines.product', 'lines.taxRate', 'lines.purchaseAccount', 'supplier', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod']);
+
+            $this->audits()->logAction(
+                AuditAction::PurchaseInvoicePosted,
+                "Facture d'achat comptabilisée : {$invoice->invoice_number}.",
+                entity: $invoice,
+                metadata: ['invoice_number' => $invoice->invoice_number, 'total' => (string) $invoice->total, 'journal_entry_number' => $journalEntry->entry_number],
+            );
+
+            return $invoice;
         });
     }
 

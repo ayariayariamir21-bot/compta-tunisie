@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Enums\JournalEntryStatus;
 use App\Models\Account;
 use App\Models\AccountingPeriod;
@@ -10,12 +11,22 @@ use App\Models\FiscalYear;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Services\Security\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class JournalEntryService
 {
+    public function __construct(
+        private ?AuditLogService $auditLog = null,
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Normalize a value to a numeric string with 3 decimal places.
      *
@@ -81,7 +92,11 @@ class JournalEntryService
             return $entry;
         });
 
-        return $entry->fresh(['lines.account']);
+        $entry = $entry->fresh(['lines.account']);
+
+        $this->audits()->logModelCreated($entry, AuditAction::JournalEntryCreated);
+
+        return $entry;
     }
 
     /**
@@ -155,6 +170,13 @@ class JournalEntryService
                 'status' => JournalEntryStatus::POSTED,
                 'posted_at' => now(),
             ]);
+
+            $this->audits()->logAction(
+                AuditAction::JournalEntryPosted,
+                "Écriture comptabilisée : {$entry->entry_number}.",
+                entity: $entry,
+                metadata: ['entry_number' => $entry->entry_number, 'journal_id' => $entry->journal_id],
+            );
         });
 
         return $entry->fresh(['lines.account', 'journal', 'creator']);
@@ -175,6 +197,13 @@ class JournalEntryService
             $entry->update([
                 'status' => JournalEntryStatus::CANCELLED,
             ]);
+
+            $this->audits()->logAction(
+                AuditAction::JournalEntryCancelled,
+                "Écriture annulée : {$entry->entry_number}.",
+                entity: $entry,
+                metadata: ['entry_number' => $entry->entry_number],
+            );
         });
 
         return $entry->fresh(['lines.account', 'journal', 'creator']);

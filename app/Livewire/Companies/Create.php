@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Companies;
 
+use App\Enums\AuditAction;
 use App\Models\Company;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -81,6 +83,13 @@ class Create extends Component
             'role' => 'admin',
             'is_active' => true,
         ]);
+
+        app(SecurityAuditLogService::class)->logAction(
+            AuditAction::CompanyCreated,
+            "Société créée : {$company->name}.",
+            company: $company,
+            entity: $company,
+        );
 
         session()->flash('success', 'La société a été créée avec succès.');
 

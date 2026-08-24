@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Companies;
 
+use App\Enums\AuditAction;
 use App\Models\Company;
 use App\Services\CurrentCompany;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -29,6 +31,13 @@ class Index extends Component
             $currentCompany->clear();
         }
 
+        app(SecurityAuditLogService::class)->logAction(
+            AuditAction::CompanyDeactivated,
+            "Société désactivée : {$company->name}.",
+            company: $company,
+            entity: $company,
+        );
+
         session()->flash('success', 'La société a été désactivée.');
 
         $this->redirect(route('companies.index'), navigate: true);
@@ -45,6 +54,13 @@ class Index extends Component
         $company->users()->updateExistingPivot(
             Auth::id(),
             ['is_active' => true]
+        );
+
+        app(SecurityAuditLogService::class)->logAction(
+            AuditAction::CompanyActivated,
+            "Société activée : {$company->name}.",
+            company: $company,
+            entity: $company,
         );
 
         session()->flash('success', 'La société a été activée.');

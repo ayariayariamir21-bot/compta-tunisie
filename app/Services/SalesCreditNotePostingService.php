@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\CreditNoteStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\JournalEntryStatus;
@@ -14,6 +15,7 @@ use App\Models\InvoiceLine;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Security\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +23,13 @@ class SalesCreditNotePostingService
 {
     public function __construct(
         private JournalEntryService $journalEntryService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     public function post(CreditNote $creditNote, int $userId): CreditNote
     {
@@ -99,7 +107,16 @@ class SalesCreditNotePostingService
                 'journal_entry_id' => $journalEntry->id,
             ]);
 
-            return $locked->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod', 'invoice']);
+            $locked = $locked->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'journalEntry', 'journal', 'fiscalYear', 'accountingPeriod', 'invoice']);
+
+            $this->audits()->logAction(
+                AuditAction::CreditNotePosted,
+                "Avoir comptabilisé : {$locked->credit_note_number}.",
+                entity: $locked,
+                metadata: ['credit_note_number' => $locked->credit_note_number, 'total' => (string) $locked->total, 'journal_entry_number' => $journalEntry->entry_number],
+            );
+
+            return $locked;
         });
     }
 

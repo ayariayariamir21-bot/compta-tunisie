@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Enums\CreditNoteStatus;
 use App\Enums\CustomerPaymentStatus;
 use App\Enums\InvoiceStatus;
@@ -12,6 +13,7 @@ use App\Models\CustomerPayment;
 use App\Models\Invoice;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Services\Security\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +22,13 @@ class CustomerPaymentPostingService
 {
     public function __construct(
         private JournalEntryService $journalEntryService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     public function post(CustomerPayment $payment, int $userId): CustomerPayment
     {
@@ -152,11 +160,20 @@ class CustomerPaymentPostingService
                 'journal_entry_id' => $journalEntry->id,
             ]);
 
-            return $locked->fresh([
+            $locked = $locked->fresh([
                 'allocations.invoice', 'customer', 'paymentMethod', 'journal',
                 'destinationAccount', 'fiscalYear', 'accountingPeriod',
                 'journalEntry.lines.account', 'creator',
             ]);
+
+            $this->audits()->logAction(
+                AuditAction::CustomerPaymentPosted,
+                "Règlement client comptabilisé : {$locked->payment_number}.",
+                entity: $locked,
+                metadata: ['payment_number' => $locked->payment_number, 'amount' => (string) $locked->amount, 'journal_entry_number' => $journalEntry->entry_number],
+            );
+
+            return $locked;
         });
     }
 

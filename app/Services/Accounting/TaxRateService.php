@@ -2,13 +2,24 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Enums\TaxType;
 use App\Models\Company;
 use App\Models\TaxRate;
+use App\Services\Security\AuditLogService;
 use Illuminate\Support\Facades\DB;
 
 class TaxRateService
 {
+    public function __construct(
+        private ?AuditLogService $auditLog = null,
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Create a new tax rate.
      *
@@ -32,7 +43,7 @@ class TaxRateService
                 $this->clearDefaults($company->id);
             }
 
-            return TaxRate::create([
+            $taxRate = TaxRate::create([
                 'company_id' => $company->id,
                 'code' => strtoupper($data['code']),
                 'name' => $data['name'],
@@ -43,6 +54,10 @@ class TaxRateService
                 'sort_order' => $data['sort_order'] ?? 0,
                 'description' => $data['description'] ?? null,
             ]);
+
+            $this->audits()->logModelCreated($taxRate, AuditAction::TaxRateCreated);
+
+            return $taxRate;
         });
     }
 
@@ -77,7 +92,9 @@ class TaxRateService
             );
         }
 
-        return DB::transaction(function () use ($taxRate, $data, $isDefault) {
+        $before = $this->audits()->snapshot($taxRate, ['code', 'name', 'rate', 'type', 'is_active', 'is_default']);
+
+        return DB::transaction(function () use ($taxRate, $data, $isDefault, $before) {
             if ($isDefault && ! $taxRate->is_default) {
                 $this->clearDefaults($taxRate->company_id);
             }
@@ -93,7 +110,16 @@ class TaxRateService
                 'description' => $data['description'] ?? null,
             ]);
 
-            return $taxRate->fresh();
+            $taxRate = $taxRate->fresh();
+
+            $this->audits()->logModelUpdated(
+                $taxRate,
+                AuditAction::TaxRateUpdated,
+                $before,
+                $this->audits()->snapshot($taxRate, ['code', 'name', 'rate', 'type', 'is_active', 'is_default']),
+            );
+
+            return $taxRate;
         });
     }
 

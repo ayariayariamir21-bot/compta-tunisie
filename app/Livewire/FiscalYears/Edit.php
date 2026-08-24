@@ -2,8 +2,10 @@
 
 namespace App\Livewire\FiscalYears;
 
+use App\Enums\AuditAction;
 use App\Models\FiscalYear;
 use App\Services\CurrentCompany;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
@@ -65,7 +67,7 @@ class Edit extends Component
         ];
     }
 
-    public function update(): void
+    public function update(SecurityAuditLogService $auditLog): void
     {
         if (Auth::user()->cannot('update', $this->fiscalYear)) {
             abort(403);
@@ -107,7 +109,18 @@ class Edit extends Component
             return;
         }
 
+        $before = $auditLog->snapshot($this->fiscalYear, ['name', 'code', 'start_date', 'end_date']);
+
         $this->fiscalYear->update($validated);
+
+        $this->fiscalYear = $this->fiscalYear->fresh();
+
+        $auditLog->logModelUpdated(
+            $this->fiscalYear,
+            AuditAction::FiscalYearUpdated,
+            $before,
+            $auditLog->snapshot($this->fiscalYear, ['name', 'code', 'start_date', 'end_date']),
+        );
 
         session()->flash('success', "L'exercice « {$this->fiscalYear->name} » a été mis à jour.");
 

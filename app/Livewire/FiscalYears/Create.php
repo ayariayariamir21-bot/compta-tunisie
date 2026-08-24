@@ -2,9 +2,11 @@
 
 namespace App\Livewire\FiscalYears;
 
+use App\Enums\AuditAction;
 use App\Models\AccountingPeriod;
 use App\Models\FiscalYear;
 use App\Services\CurrentCompany;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
@@ -94,6 +96,13 @@ class Create extends Component
             ]);
 
             $this->generateMonthlyPeriods($fiscalYear);
+
+            app(SecurityAuditLogService::class)->logAction(
+                AuditAction::FiscalYearCreated,
+                "Exercice créé : {$fiscalYear->name}.",
+                company: $company,
+                entity: $fiscalYear,
+            );
         });
 
         session()->flash('success', "L'exercice « {$validated['name']} » a été créé avec succès.");

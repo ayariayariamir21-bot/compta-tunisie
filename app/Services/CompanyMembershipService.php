@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\CompanyRole;
 use App\Models\Company;
 use App\Models\User;
+use App\Services\Security\AuditLogService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -15,6 +17,15 @@ use RuntimeException;
  */
 class CompanyMembershipService
 {
+    public function __construct(
+        private ?AuditLogService $auditLog = null,
+    ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
+
     /**
      * Assign or change the role of a member.
      */
@@ -32,6 +43,8 @@ class CompanyMembershipService
                 $this->assertOtherActiveAdminExists($company, $member);
             }
 
+            $previousRole = CompanyRole::from($membership->role);
+
             DB::table('company_user')
                 ->where('company_id', $company->id)
                 ->where('user_id', $member->id)
@@ -39,6 +52,16 @@ class CompanyMembershipService
                     'role' => $role->value,
                     'updated_at' => now(),
                 ]);
+
+            if ($previousRole !== $role) {
+                $this->audits()->log(
+                    AuditAction::RoleChanged,
+                    company: $company,
+                    entity: $member,
+                    before: ['member_email' => $member->email, 'role' => $previousRole->label()],
+                    after: ['member_email' => $member->email, 'role' => $role->label()],
+                );
+            }
         });
     }
 
@@ -57,13 +80,22 @@ class CompanyMembershipService
     {
         $this->assertMembershipExists($company, $member);
 
-        DB::table('company_user')
-            ->where('company_id', $company->id)
-            ->where('user_id', $member->id)
-            ->update([
-                'is_active' => true,
-                'updated_at' => now(),
-            ]);
+        DB::transaction(function () use ($company, $member): void {
+            DB::table('company_user')
+                ->where('company_id', $company->id)
+                ->where('user_id', $member->id)
+                ->update([
+                    'is_active' => true,
+                    'updated_at' => now(),
+                ]);
+
+            $this->audits()->logAction(
+                AuditAction::MemberActivated,
+                "Membre réactivé : {$member->email}.",
+                company: $company,
+                entity: $member,
+            );
+        });
     }
 
     /**
@@ -94,6 +126,13 @@ class CompanyMembershipService
                     ->where('user_id', $member->id)
                     ->delete();
 
+                $this->audits()->logAction(
+                    AuditAction::MemberRemoved,
+                    "Membre retiré : {$member->email}.",
+                    company: $company,
+                    entity: $member,
+                );
+
                 return;
             }
 
@@ -104,6 +143,13 @@ class CompanyMembershipService
                     'is_active' => false,
                     'updated_at' => now(),
                 ]);
+
+            $this->audits()->logAction(
+                AuditAction::MemberDeactivated,
+                "Membre désactivé : {$member->email}.",
+                company: $company,
+                entity: $member,
+            );
         });
     }
 

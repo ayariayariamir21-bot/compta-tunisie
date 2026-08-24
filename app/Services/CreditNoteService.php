@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\CreditNoteStatus;
 use App\Enums\InvoiceStatus;
 use App\Models\AccountingPeriod;
@@ -14,6 +15,8 @@ use App\Models\InvoiceLine;
 use App\Models\Journal;
 use App\Models\Product;
 use App\Models\TaxRate;
+use App\Services\Security\AuditLogService;
+use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +24,13 @@ class CreditNoteService
 {
     public function __construct(
         private SalesCreditNotePostingService $postingService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): SecurityAuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     /**
      * Numbering strategy: AV-{YEAR}-{NNNNNN} scoped per company.
@@ -94,7 +103,11 @@ class CreditNoteService
             $this->syncLines($creditNote, $linesData, $invoice);
             $this->calculateTotals($creditNote);
 
-            return $creditNote->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'invoice']);
+            $creditNote = $creditNote->fresh(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'invoice']);
+
+            $this->audits()->logModelCreated($creditNote, AuditAction::CreditNoteCreated);
+
+            return $creditNote;
         });
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\AuditAction;
 use App\Enums\JournalEntryStatus;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Enums\SupplierPaymentStatus;
@@ -11,6 +12,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\PurchaseInvoice;
 use App\Models\SupplierPayment;
+use App\Services\Security\AuditLogService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +21,13 @@ class SupplierPaymentPostingService
 {
     public function __construct(
         private JournalEntryService $journalEntryService,
+        private ?AuditLogService $auditLog = null,
     ) {}
+
+    private function audits(): AuditLogService
+    {
+        return $this->auditLog ?? new AuditLogService;
+    }
 
     public function post(SupplierPayment $payment, int $userId): SupplierPayment
     {
@@ -147,11 +155,20 @@ class SupplierPaymentPostingService
                 'journal_entry_id' => $journalEntry->id,
             ]);
 
-            return $locked->fresh([
+            $locked = $locked->fresh([
                 'allocations.purchaseInvoice', 'supplier', 'paymentMethod', 'journal',
                 'destinationAccount', 'fiscalYear', 'accountingPeriod',
                 'journalEntry.lines.account', 'creator',
             ]);
+
+            $this->audits()->logAction(
+                AuditAction::SupplierPaymentPosted,
+                "R\u{e8}glement fournisseur comptabilis\u{e9} : {$locked->payment_number}.",
+                entity: $locked,
+                metadata: ['payment_number' => $locked->payment_number, 'amount' => (string) $locked->amount, 'journal_entry_number' => $journalEntry->entry_number],
+            );
+
+            return $locked;
         });
     }
 
