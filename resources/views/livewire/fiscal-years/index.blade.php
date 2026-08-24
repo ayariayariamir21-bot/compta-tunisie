@@ -18,6 +18,7 @@
             </div>
 
             @if ($currentCompany)
+    @can('create', [App\Models\FiscalYear::class, $currentCompany])
                 <a
                     href="{{ route('fiscal-years.create') }}"
                     wire:navigate
@@ -25,6 +26,7 @@
                 >
                     + Nouvel exercice
                 </a>
+    @endcan
             @endif
         </div>
 

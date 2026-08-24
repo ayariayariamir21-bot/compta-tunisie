@@ -1,9 +1,11 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dépenses</h1>
+    @can('create', [App\Models\Expense::class, $currentCompany])
         <a href="{{ route('expenses.create') }}" class="flux-btn-primary" wire:navigate>
             Nouvelle dépense
         </a>
+    @endcan
     </div>
 
     @if (session('success'))

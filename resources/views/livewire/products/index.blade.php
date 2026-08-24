@@ -18,6 +18,7 @@
             </div>
 
             @if ($currentCompany)
+    @can('create', [App\Models\Product::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <a
                         href="{{ route('products.create') }}"
@@ -27,6 +28,7 @@
                         + Nouveau produit/service
                     </a>
                 </div>
+    @endcan
             @endif
         </div>
 

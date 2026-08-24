@@ -54,7 +54,7 @@ class Create extends Component
             return;
         }
 
-        if (Auth::user()->cannot('create', FiscalYear::class)) {
+        if (Auth::user()->cannot('create', [FiscalYear::class, $company])) {
             abort(403);
         }
 

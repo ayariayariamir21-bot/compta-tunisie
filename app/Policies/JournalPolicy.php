@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Company;
 use App\Models\Journal;
 use App\Models\User;
 
@@ -14,21 +15,13 @@ class JournalPolicy
 
     public function view(User $user, Journal $journal): bool
     {
-        return $user->companies()
-            ->where('companies.id', $journal->company_id)
-            ->exists();
+        return $this->canRead($user, $journal->company_id);
     }
 
-    public function create(User $user, Journal $journal): bool
+    public function create(User $user, Company $company): bool
     {
-        if ($journal->fiscalYear->is_closed) {
-            return false;
-        }
 
-        return $user->companies()
-            ->where('companies.id', $journal->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $company->id);
     }
 
     public function update(User $user, Journal $journal): bool
@@ -37,10 +30,7 @@ class JournalPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journal->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $journal->company_id);
     }
 
     public function delete(User $user, Journal $journal): bool
@@ -49,10 +39,7 @@ class JournalPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journal->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $journal->company_id);
     }
 
     public function activate(User $user, Journal $journal): bool
@@ -61,9 +48,22 @@ class JournalPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journal->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $journal->company_id);
+    }
+
+    /**
+     * Any active member may read company data.
+     */
+    private function canRead(User $user, int $companyId): bool
+    {
+        return $user->isActiveCompanyMember($companyId);
+    }
+
+    /**
+     * Only company admins may change accounting configuration.
+     */
+    private function canManageConfiguration(User $user, int $companyId): bool
+    {
+        return $user->isCompanyAdmin($companyId);
     }
 }

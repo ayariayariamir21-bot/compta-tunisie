@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 
@@ -14,17 +15,12 @@ class FiscalYearPolicy
 
     public function view(User $user, FiscalYear $fiscalYear): bool
     {
-        return $user->companies()
-            ->where('companies.id', $fiscalYear->company_id)
-            ->exists();
+        return $this->canRead($user, $fiscalYear->company_id);
     }
 
-    public function create(User $user, FiscalYear $fiscalYear): bool
+    public function create(User $user, Company $company): bool
     {
-        return $user->companies()
-            ->where('companies.id', $fiscalYear->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $company->id);
     }
 
     public function update(User $user, FiscalYear $fiscalYear): bool
@@ -33,10 +29,7 @@ class FiscalYearPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $fiscalYear->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $fiscalYear->company_id);
     }
 
     public function delete(User $user, FiscalYear $fiscalYear): bool
@@ -45,18 +38,12 @@ class FiscalYearPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $fiscalYear->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $fiscalYear->company_id);
     }
 
     public function activate(User $user, FiscalYear $fiscalYear): bool
     {
-        return $user->companies()
-            ->where('companies.id', $fiscalYear->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $fiscalYear->company_id);
     }
 
     public function close(User $user, FiscalYear $fiscalYear): bool
@@ -65,9 +52,22 @@ class FiscalYearPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $fiscalYear->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canManageConfiguration($user, $fiscalYear->company_id);
+    }
+
+    /**
+     * Any active member may read company data.
+     */
+    private function canRead(User $user, int $companyId): bool
+    {
+        return $user->isActiveCompanyMember($companyId);
+    }
+
+    /**
+     * Only company admins may change accounting configuration.
+     */
+    private function canManageConfiguration(User $user, int $companyId): bool
+    {
+        return $user->isCompanyAdmin($companyId);
     }
 }

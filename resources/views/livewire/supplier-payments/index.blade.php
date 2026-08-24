@@ -1,9 +1,11 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Règlements fournisseurs</h1>
+    @can('create', [App\Models\SupplierPayment::class, $currentCompany])
         <a href="{{ route('supplier-payments.create') }}" class="flux-btn-primary" wire:navigate>
             Nouveau règlement
         </a>
+    @endcan
     </div>
 
     @if (session('success'))

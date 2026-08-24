@@ -14,9 +14,7 @@ class CompanyPolicy
 
     public function view(User $user, Company $company): bool
     {
-        return $user->companies()
-            ->where('companies.id', $company->id)
-            ->exists();
+        return $user->isActiveCompanyMember($company->id);
     }
 
     public function create(User $user): bool
@@ -26,17 +24,19 @@ class CompanyPolicy
 
     public function update(User $user, Company $company): bool
     {
-        return $user->companies()
-            ->where('companies.id', $company->id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $user->isCompanyAdmin($company->id);
     }
 
     public function delete(User $user, Company $company): bool
     {
-        return $user->companies()
-            ->where('companies.id', $company->id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $user->isCompanyAdmin($company->id);
+    }
+
+    /**
+     * Only company admins may manage the members of their company.
+     */
+    public function manageMembers(User $user, Company $company): bool
+    {
+        return $user->isCompanyAdmin($company->id);
     }
 }

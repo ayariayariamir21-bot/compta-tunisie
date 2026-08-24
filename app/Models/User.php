@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
+use App\Enums\CompanyRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\Contracts\PasskeyUser as FortifyPasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Passkeys\Contracts\PasskeyUser;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FortifyPasskeyUser, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * Attributes that are mass assignable.
@@ -29,6 +34,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -64,6 +71,41 @@ class User extends Authenticatable
                 'is_active',
             ])
             ->withTimestamps();
+    }
+
+    /**
+     * Whether the user holds an ACTIVE membership in the company,
+     * regardless of the stored role value.
+     */
+    public function isActiveCompanyMember(int|Company $company): bool
+    {
+        return $this->companies()
+            ->whereKey($company instanceof Company ? $company->getKey() : $company)
+            ->wherePivot('is_active', true)
+            ->exists();
+    }
+
+    public function hasCompanyRole(int|Company $company, CompanyRole $role): bool
+    {
+        return $this->hasAnyCompanyRole($company, $role);
+    }
+
+    public function hasAnyCompanyRole(int|Company $company, CompanyRole ...$roles): bool
+    {
+        if ($roles === []) {
+            return false;
+        }
+
+        return $this->companies()
+            ->whereKey($company instanceof Company ? $company->getKey() : $company)
+            ->wherePivot('is_active', true)
+            ->wherePivotIn('role', array_map(fn (CompanyRole $role) => $role->value, $roles))
+            ->exists();
+    }
+
+    public function isCompanyAdmin(int|Company $company): bool
+    {
+        return $this->hasAnyCompanyRole($company, CompanyRole::Admin);
     }
 
     /**

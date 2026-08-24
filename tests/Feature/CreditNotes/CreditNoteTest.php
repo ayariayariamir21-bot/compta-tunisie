@@ -705,8 +705,7 @@ it('rejects a product from another company in credit lines', function () {
 
 // ---------- Authorization ----------
 
-it('restricts mutations to company admins', function () {
-    $service = cnService();
+it('allows accountants to operate on credit notes', function () {
     $invoice = createPostedInvoiceForTest($this);
 
     $accountant = User::factory()->create();
@@ -716,14 +715,42 @@ it('restricts mutations to company admins', function () {
 
     expect($accountant->can('viewAny', CreditNote::class))->toBeTrue()
         ->and($accountant->can('view', $creditNote))->toBeTrue()
-        ->and($accountant->can('create', [CreditNote::class, $this->company]))->toBeFalse()
-        ->and($accountant->can('update', $creditNote))->toBeFalse()
-        ->and($accountant->can('delete', $creditNote))->toBeFalse()
-        ->and($accountant->can('post', $creditNote))->toBeFalse()
-        ->and($accountant->can('cancel', $creditNote))->toBeFalse()
+        ->and($accountant->can('create', [CreditNote::class, $this->company]))->toBeTrue()
+        ->and($accountant->can('update', $creditNote))->toBeTrue()
+        ->and($accountant->can('delete', $creditNote))->toBeTrue()
+        ->and($accountant->can('post', $creditNote))->toBeTrue()
+        ->and($accountant->can('cancel', $creditNote))->toBeTrue()
         ->and($this->user->can('create', [CreditNote::class, $this->company]))->toBeTrue()
         ->and($this->user->can('update', $creditNote))->toBeTrue()
         ->and($this->user->can('post', $creditNote))->toBeTrue();
+});
+
+it('keeps viewers read-only on credit notes', function () {
+    $invoice = createPostedInvoiceForTest($this);
+
+    $viewer = User::factory()->create();
+    $this->company->users()->attach($viewer, ['role' => 'viewer', 'is_active' => true]);
+
+    $creditNote = createDraftCreditNoteForTest($this, $invoice);
+
+    expect($viewer->can('viewAny', CreditNote::class))->toBeTrue()
+        ->and($viewer->can('view', $creditNote))->toBeTrue()
+        ->and($viewer->can('create', [CreditNote::class, $this->company]))->toBeFalse()
+        ->and($viewer->can('update', $creditNote))->toBeFalse()
+        ->and($viewer->can('post', $creditNote))->toBeFalse();
+});
+
+it('denies an inactive member any credit note access', function () {
+    $invoice = createPostedInvoiceForTest($this);
+
+    $inactive = User::factory()->create();
+    $this->company->users()->attach($inactive, ['role' => 'admin', 'is_active' => false]);
+
+    $creditNote = createDraftCreditNoteForTest($this, $invoice);
+
+    expect($inactive->can('viewAny', CreditNote::class))->toBeTrue()
+        ->and($inactive->can('view', $creditNote))->toBeFalse()
+        ->and($inactive->can('create', [CreditNote::class, $this->company]))->toBeFalse();
 });
 
 it('blocks cross-company access to credit notes', function () {

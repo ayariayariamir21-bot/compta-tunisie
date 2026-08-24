@@ -14,12 +14,14 @@
             </div>
 
             @if ($currentCompany)
+    @can('create', [App\Models\Quote::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <a href="{{ route('quotes.create') }}" wire:navigate
                         class="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">
                         + Nouveau devis
                     </a>
                 </div>
+    @endcan
             @endif
         </div>
 

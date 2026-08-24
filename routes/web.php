@@ -4,6 +4,7 @@ use App\Http\Controllers\Reports\PdfReportController;
 use App\Livewire\Companies\Create;
 use App\Livewire\Companies\Edit;
 use App\Livewire\Companies\Index;
+use App\Livewire\Companies\Members;
 use App\Livewire\JournalEntries\Show;
 use App\Livewire\Reports\BalanceSheet;
 use App\Livewire\Reports\CustomerStatement;
@@ -27,6 +28,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('companies/{companyId}/edit', Edit::class)
         ->name('companies.edit');
+
+    Route::get('company/members', Members::class)
+        ->name('companies.members');
 
     Route::get('fiscal-years', App\Livewire\FiscalYears\Index::class)
         ->name('fiscal-years.index');

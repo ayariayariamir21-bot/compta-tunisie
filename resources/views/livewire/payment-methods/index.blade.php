@@ -18,6 +18,7 @@
             </div>
 
             @if ($currentCompany)
+    @can('create', [App\Models\PaymentMethod::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <button
                         wire:click="initializeDefaults"
@@ -35,6 +36,7 @@
                         + Nouveau moyen
                     </a>
                 </div>
+    @endcan
             @endif
         </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\CompanyRole;
 use App\Enums\ExpenseStatus;
 use App\Models\Company;
 use App\Models\Expense;
@@ -16,12 +17,12 @@ class ExpensePolicy
 
     public function view(User $user, Expense $expense): bool
     {
-        return $user->companies()->where('companies.id', $expense->company_id)->exists();
+        return $this->canRead($user, $expense->company_id);
     }
 
     public function create(User $user, Company $company): bool
     {
-        return $user->companies()->where('companies.id', $company->id)->wherePivot('role', 'admin')->exists();
+        return $this->canOperate($user, $company->id);
     }
 
     public function update(User $user, Expense $expense): bool
@@ -30,7 +31,7 @@ class ExpensePolicy
             return false;
         }
 
-        return $user->companies()->where('companies.id', $expense->company_id)->wherePivot('role', 'admin')->exists();
+        return $this->canOperate($user, $expense->company_id);
     }
 
     public function delete(User $user, Expense $expense): bool
@@ -39,7 +40,7 @@ class ExpensePolicy
             return false;
         }
 
-        return $user->companies()->where('companies.id', $expense->company_id)->wherePivot('role', 'admin')->exists();
+        return $this->canOperate($user, $expense->company_id);
     }
 
     public function post(User $user, Expense $expense): bool
@@ -48,7 +49,7 @@ class ExpensePolicy
             return false;
         }
 
-        return $user->companies()->where('companies.id', $expense->company_id)->wherePivot('role', 'admin')->exists();
+        return $this->canOperate($user, $expense->company_id);
     }
 
     public function cancel(User $user, Expense $expense): bool
@@ -57,6 +58,22 @@ class ExpensePolicy
             return false;
         }
 
-        return $user->companies()->where('companies.id', $expense->company_id)->wherePivot('role', 'admin')->exists();
+        return $this->canOperate($user, $expense->company_id);
+    }
+
+    /**
+     * Any active member may read company data.
+     */
+    private function canRead(User $user, int $companyId): bool
+    {
+        return $user->isActiveCompanyMember($companyId);
+    }
+
+    /**
+     * Admins and accountants may perform operational accounting mutations.
+     */
+    private function canOperate(User $user, int $companyId): bool
+    {
+        return $user->hasAnyCompanyRole($companyId, ...CompanyRole::operationalRoles());
     }
 }

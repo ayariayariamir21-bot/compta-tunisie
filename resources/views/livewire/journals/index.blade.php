@@ -18,6 +18,7 @@
             </div>
 
             @if ($currentCompany && $currentFiscalYear)
+            @can('create', [App\Models\Journal::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <button
                         wire:click="initializeJournals"
@@ -35,6 +36,7 @@
                         + Nouveau journal
                     </a>
                 </div>
+            @endcan
             @endif
         </div>
 

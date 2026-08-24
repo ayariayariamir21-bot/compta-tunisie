@@ -18,6 +18,7 @@
             </div>
 
             @if ($currentCompany)
+    @can('create', [App\Models\Supplier::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <a
                         href="{{ route('suppliers.create') }}"
@@ -27,6 +28,7 @@
                         + Nouveau fournisseur
                     </a>
                 </div>
+    @endcan
             @endif
         </div>
 

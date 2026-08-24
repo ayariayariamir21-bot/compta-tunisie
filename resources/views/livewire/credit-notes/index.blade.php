@@ -1,9 +1,11 @@
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Avoirs</h1>
+    @can('create', [App\Models\CreditNote::class, $currentCompany])
             <a href="{{ route('credit-notes.create') }}" class="flux-btn-primary" wire:navigate>
                 Nouvel avoir
             </a>
+    @endcan
         </div>
 
         @if (session('success'))

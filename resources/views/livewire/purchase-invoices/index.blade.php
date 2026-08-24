@@ -1,9 +1,11 @@
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Factures fournisseurs</h1>
+    @can('create', [App\Models\PurchaseInvoice::class, $currentCompany])
             <a href="{{ route('purchase-invoices.create') }}" class="flux-btn-primary" wire:navigate>
                 Nouvelle facture fournisseur
             </a>
+    @endcan
         </div>
 
         @if (session('success'))

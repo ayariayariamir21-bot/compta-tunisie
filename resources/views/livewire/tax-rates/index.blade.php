@@ -22,6 +22,7 @@
             </div>
 
             @if ($currentCompany)
+    @can('create', [App\Models\TaxRate::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <button
                         wire:click="initializeDefaults"
@@ -39,6 +40,7 @@
                         + Nouveau taux
                     </a>
                 </div>
+    @endcan
             @endif
         </div>
 

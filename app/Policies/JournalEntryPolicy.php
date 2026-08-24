@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Enums\CompanyRole;
+use App\Models\Company;
 use App\Models\JournalEntry;
 use App\Models\User;
 
@@ -14,17 +16,12 @@ class JournalEntryPolicy
 
     public function view(User $user, JournalEntry $journalEntry): bool
     {
-        return $user->companies()
-            ->where('companies.id', $journalEntry->company_id)
-            ->exists();
+        return $this->canRead($user, $journalEntry->company_id);
     }
 
-    public function create(User $user, JournalEntry $journalEntry): bool
+    public function create(User $user, Company $company): bool
     {
-        return $user->companies()
-            ->where('companies.id', $journalEntry->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canOperate($user, $company->id);
     }
 
     public function update(User $user, JournalEntry $journalEntry): bool
@@ -33,10 +30,7 @@ class JournalEntryPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journalEntry->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canOperate($user, $journalEntry->company_id);
     }
 
     public function delete(User $user, JournalEntry $journalEntry): bool
@@ -45,10 +39,7 @@ class JournalEntryPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journalEntry->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canOperate($user, $journalEntry->company_id);
     }
 
     public function post(User $user, JournalEntry $journalEntry): bool
@@ -57,10 +48,7 @@ class JournalEntryPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journalEntry->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canOperate($user, $journalEntry->company_id);
     }
 
     public function cancel(User $user, JournalEntry $journalEntry): bool
@@ -69,9 +57,22 @@ class JournalEntryPolicy
             return false;
         }
 
-        return $user->companies()
-            ->where('companies.id', $journalEntry->company_id)
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $this->canOperate($user, $journalEntry->company_id);
+    }
+
+    /**
+     * Any active member may read company data.
+     */
+    private function canRead(User $user, int $companyId): bool
+    {
+        return $user->isActiveCompanyMember($companyId);
+    }
+
+    /**
+     * Admins and accountants may perform operational accounting mutations.
+     */
+    private function canOperate(User $user, int $companyId): bool
+    {
+        return $user->hasAnyCompanyRole($companyId, ...CompanyRole::operationalRoles());
     }
 }

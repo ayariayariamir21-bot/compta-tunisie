@@ -18,6 +18,7 @@
             </div>
 
             @if ($currentCompany && $currentFiscalYear)
+            @can('create', [App\Models\Account::class, $currentCompany])
                 <div class="flex items-center gap-2">
                     <button
                         wire:click="initializeChart"
@@ -35,6 +36,7 @@
                         + Nouveau compte
                     </a>
                 </div>
+            @endcan
             @endif
         </div>
 

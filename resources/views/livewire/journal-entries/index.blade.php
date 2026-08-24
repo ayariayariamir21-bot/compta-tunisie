@@ -17,13 +17,15 @@
             </div>
 
             @if ($currentCompany && $currentFiscalYear)
-                <a
-                    href="{{ route('journal-entries.create') }}"
-                    wire:navigate
-                    class="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-                >
-                    + Nouvelle écriture
-                </a>
+                @can('create', [\App\Models\JournalEntry::class, $currentCompany])
+                    <a
+                        href="{{ route('journal-entries.create') }}"
+                        wire:navigate
+                        class="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                    >
+                        + Nouvelle écriture
+                    </a>
+                @endcan
             @endif
         </div>
 
