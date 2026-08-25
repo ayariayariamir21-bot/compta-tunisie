@@ -2,6 +2,11 @@
 #
 # Provider-neutral production deployment for compta-tunisie.
 #
+# TARGET HOSTS: manual/VPS-style hosts where the operator controls the
+# machine. On Laravel Cloud this script is NOT used — Cloud runs its own
+# build/deploy commands (see docs/laravel-cloud.md); maintenance mode,
+# worker restarts and zero-downtime swaps are handled by the platform.
+#
 # Run ON THE TARGET HOST, inside the release checkout, with the production
 # environment already configured (.env or platform environment variables).
 #
