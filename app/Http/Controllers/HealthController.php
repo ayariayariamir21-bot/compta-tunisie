@@ -2,32 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\System\HealthCheckService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Throwable;
 
 /**
- * Minimal system health endpoint for load balancers and uptime probes.
+ * Minimal system health endpoints for load balancers and uptime probes.
  *
- * Returns only an application/database status — never credentials,
- * hostnames, versions, paths or stack traces. 200 when healthy, 503 when
- * the database is unreachable.
+ * Returns only application/database/storage status — never credentials,
+ * hostnames, versions, paths or stack traces. 200 when healthy/ready, 503
+ * when a critical dependency is unavailable.
  */
 final class HealthController extends Controller
 {
     public function __invoke(): JsonResponse
     {
-        $database = 'ok';
+        $health = app(HealthCheckService::class)->getHealth();
+        $healthy = $health['status'] === 'ok';
 
-        try {
-            DB::connection()->select('select 1');
-        } catch (Throwable) {
-            $database = 'unavailable';
-        }
+        return response()->json($health, $healthy ? 200 : 503);
+    }
 
-        return response()->json([
-            'status' => $database === 'ok' ? 'ok' : 'unavailable',
-            'database' => $database,
-        ], $database === 'ok' ? 200 : 503);
+    /**
+     * Readiness probe: critical dependencies only (database, storage).
+     */
+    public function ready(): JsonResponse
+    {
+        $readiness = app(HealthCheckService::class)->getReadiness();
+
+        return response()->json(
+            [
+                'status' => $readiness['status'],
+                'database' => $readiness['database'],
+                'storage' => $readiness['storage'],
+            ],
+            $readiness['ready'] ? 200 : 503,
+        );
     }
 }

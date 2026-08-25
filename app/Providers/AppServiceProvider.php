@@ -56,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->registerBackupPolicy();
+        $this->registerMonitoringGate();
         $this->configureRateLimiting();
         $this->listenForAuditEvents();
     }
@@ -67,6 +68,17 @@ class AppServiceProvider extends ServiceProvider
     protected function registerBackupPolicy(): void
     {
         Gate::policy(Backup::class, BackupPolicy::class);
+    }
+
+    /**
+     * The monitoring dashboard exposes runtime/operational information and
+     * is therefore restricted to company administrators (any company).
+     */
+    protected function registerMonitoringGate(): void
+    {
+        Gate::define('viewSystemMonitoring', function (?User $user): bool {
+            return $user !== null && $user->isCompanyAdminAnywhere();
+        });
     }
 
     /**

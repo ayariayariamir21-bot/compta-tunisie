@@ -17,12 +17,16 @@ use App\Livewire\Reports\IncomeStatement;
 use App\Livewire\Reports\SupplierStatement;
 use App\Livewire\Reports\TrialBalance;
 use App\Livewire\Reports\VatReport;
+use App\Livewire\System\Monitoring;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
 Route::get('health', HealthController::class)
     ->name('health');
+
+Route::get('health/ready', [HealthController::class, 'ready'])
+    ->name('health.ready');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
@@ -62,6 +66,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:backups')
         ->where('backup', '[A-Za-z0-9\-]+\.dump')
         ->name('backups.restore');
+
+    Route::get('monitoring', Monitoring::class)
+        ->name('monitoring.index');
 
     Route::get('notifications', App\Livewire\Notifications\Index::class)
         ->name('notifications.index');
