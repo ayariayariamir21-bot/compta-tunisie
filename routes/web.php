@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\Reports\PdfReportController;
 use App\Livewire\AuditLogs\Index as AuditLogsIndex;
 use App\Livewire\Backups\Index as BackupsIndex;
@@ -19,6 +20,9 @@ use App\Livewire\Reports\VatReport;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
+
+Route::get('health', HealthController::class)
+    ->name('health');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');

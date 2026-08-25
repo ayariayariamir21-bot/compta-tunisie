@@ -13,6 +13,8 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\NotificationService;
+use App\Services\Security\ProcessRunner;
+use App\Services\Security\SymfonyProcessRunner;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed as AuthFailed;
 use Illuminate\Auth\Events\Login as AuthLogin;
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AuditLogService::class);
+        $this->app->singleton(ProcessRunner::class, SymfonyProcessRunner::class);
 
         // Context resolvers are memoized per request (keyed by the session
         // inputs and acting user) so repeated lookups on one page do not
