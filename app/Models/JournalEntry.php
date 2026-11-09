@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
@@ -98,13 +100,23 @@ class JournalEntry extends Model
     /** @return numeric-string */
     public function totalDebit(): string
     {
-        return number_format((float) $this->lines->sum('debit'), 3, '.', '');
+        $total = '0.000';
+        foreach ($this->lines as $line) {
+            $total = bcadd($total, (string) $line->debit, 3);
+        }
+
+        return $total;
     }
 
     /** @return numeric-string */
     public function totalCredit(): string
     {
-        return number_format((float) $this->lines->sum('credit'), 3, '.', '');
+        $total = '0.000';
+        foreach ($this->lines as $line) {
+            $total = bcadd($total, (string) $line->credit, 3);
+        }
+
+        return $total;
     }
 
     public function isBalanced(): bool

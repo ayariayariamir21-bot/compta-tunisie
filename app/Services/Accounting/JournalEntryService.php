@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\AuditAction;
@@ -33,15 +35,22 @@ class JournalEntryService
      *
      * @return numeric-string
      */
-    private function normalizeDecimal(string|int|float|null $value): string
+    private function normalizeDecimal(string|int|null $value): string
     {
-        if ($value === null || $value === '') {
-            return '0.000';
+        $value = trim((string) ($value ?? '0'));
+
+        if (! preg_match('/^-?\d+(?:\.\d{1,3})?$/', $value)) {
+            throw new \InvalidArgumentException('Montant décimal invalide.');
         }
 
-        $numVal = is_numeric($value) ? (string) $value : '0.000';
+        $isNegative = str_starts_with($value, '-');
+        $unsignedValue = ltrim($value, '-');
+        [$integerPart, $fractionalPart] = array_pad(explode('.', $unsignedValue, 2), 2, '');
 
-        return number_format((float) $numVal, 3, '.', '');
+        return ($isNegative ? '-' : '')
+            .$integerPart
+            .'.'
+            .str_pad($fractionalPart, 3, '0');
     }
 
     /**
@@ -149,37 +158,42 @@ class JournalEntryService
      */
     public function post(JournalEntry $entry): JournalEntry
     {
-        if (! $entry->isDraft()) {
-            throw new \InvalidArgumentException('Seules les écritures en brouillon peuvent être comptabilisées.');
-        }
+        return DB::transaction(function () use ($entry): JournalEntry {
+            $locked = JournalEntry::query()
+                ->whereKey($entry->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $this->validateContext($entry->company, $entry->fiscalYear, $entry->accountingPeriod);
-        $this->validateJournal($entry->journal_id, $entry->company_id, $entry->fiscal_year_id);
+            if (! $locked->isDraft()) {
+                throw new \InvalidArgumentException('Seules les écritures en brouillon peuvent être comptabilisées.');
+            }
 
-        $lines = $entry->lines()->get();
+            $locked->load(['company', 'fiscalYear', 'accountingPeriod']);
+            $this->validateContext($locked->company, $locked->fiscalYear, $locked->accountingPeriod);
+            $this->validateJournal($locked->journal_id, $locked->company_id, $locked->fiscal_year_id);
 
-        if ($lines->count() < 2) {
-            throw new \InvalidArgumentException('Une écriture doit contenir au moins 2 lignes pour être comptabilisée.');
-        }
+            $lines = $locked->lines()->get();
+            if ($lines->count() < 2) {
+                throw new \InvalidArgumentException('Une écriture doit contenir au moins 2 lignes pour être comptabilisée.');
+            }
 
-        $this->validateLineRules($lines);
-        $this->validateBalance($lines);
+            $this->validateLineRules($lines);
+            $this->validateBalance($lines);
 
-        DB::transaction(function () use ($entry) {
-            $entry->update([
+            $locked->update([
                 'status' => JournalEntryStatus::POSTED,
                 'posted_at' => now(),
             ]);
 
             $this->audits()->logAction(
                 AuditAction::JournalEntryPosted,
-                "Écriture comptabilisée : {$entry->entry_number}.",
-                entity: $entry,
-                metadata: ['entry_number' => $entry->entry_number, 'journal_id' => $entry->journal_id],
+                "Écriture comptabilisée : {$locked->entry_number}.",
+                entity: $locked,
+                metadata: ['entry_number' => $locked->entry_number, 'journal_id' => $locked->journal_id],
             );
-        });
 
-        return $entry->fresh(['lines.account', 'journal', 'creator']);
+            return $locked->fresh(['lines.account', 'journal', 'creator']);
+        });
     }
 
     /**
