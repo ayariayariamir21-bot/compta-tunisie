@@ -336,6 +336,16 @@
                         <label for="is_active" class="text-sm font-medium">Client actif</label>
                     </div>
 
+                    <div class="flex items-center gap-2">
+                        <input
+                            id="is_stamp_duty_exempt"
+                            type="checkbox"
+                            wire:model="is_stamp_duty_exempt"
+                            class="h-4 w-4 rounded border-neutral-300"
+                        >
+                        <label for="is_stamp_duty_exempt" class="text-sm font-medium">Exonéré du droit de timbre</label>
+                    </div>
+
                 </div>
             </div>
 

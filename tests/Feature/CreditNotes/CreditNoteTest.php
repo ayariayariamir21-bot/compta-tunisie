@@ -292,8 +292,12 @@ it('generates AV credit note numbers with the current year', function () {
     $first = createDraftCreditNoteForTest($this, $invoice, [], [$invoice->lines->first()->id => '1']);
     $second = createDraftCreditNoteForTest($this, $invoice, [], [$invoice->lines->first()->id => '1']);
 
-    expect($first->credit_note_number)->toMatch('/^AV-\d{4}-\d{6}$/');
+    expect($first->credit_note_number)->toStartWith('BR-');
     expect($second->credit_note_number)->not->toBe($first->credit_note_number);
+
+    $posted = app(CreditNoteService::class)->post($first, $this->user->id);
+
+    expect($posted->credit_note_number)->toMatch('/^AV-\d{4}-\d{6}$/');
 });
 
 // ---------- Source invoice validation ----------

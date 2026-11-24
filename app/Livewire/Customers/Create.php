@@ -55,6 +55,8 @@ class Create extends Component
 
     public bool $is_active = true;
 
+    public bool $is_stamp_duty_exempt = false;
+
     public bool $isGenerated = false;
 
     /** @return array<string, list<string|ValidationRule>> */
@@ -81,6 +83,7 @@ class Create extends Component
             'account_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['boolean'],
+            'is_stamp_duty_exempt' => ['boolean'],
         ];
     }
 

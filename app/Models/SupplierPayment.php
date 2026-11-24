@@ -25,6 +25,8 @@ use Illuminate\Support\Carbon;
  * @property-read string $payment_number
  * @property-read Carbon $payment_date
  * @property-read numeric-string $amount
+ * @property-read numeric-string $withholding_rate
+ * @property-read numeric-string $withholding_amount
  * @property-read string $currency
  * @property-read string|null $reference
  * @property-read string|null $notes
@@ -49,6 +51,8 @@ class SupplierPayment extends Model
         'payment_number',
         'payment_date',
         'amount',
+        'withholding_rate',
+        'withholding_amount',
         'currency',
         'reference',
         'notes',
@@ -64,6 +68,8 @@ class SupplierPayment extends Model
             'payment_date' => 'date',
             'status' => SupplierPaymentStatus::class,
             'amount' => 'decimal:3',
+            'withholding_rate' => 'decimal:3',
+            'withholding_amount' => 'decimal:3',
             'posted_at' => 'datetime',
         ];
     }

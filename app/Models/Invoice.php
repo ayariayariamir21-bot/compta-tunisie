@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property-read string $discount_total
  * @property-read string $tax_total
  * @property-read string $total
+ * @property-read string $stamp_duty
  * @property-read int $payment_terms_days
  * @property-read string|null $notes
  * @property-read string|null $terms
@@ -50,6 +51,7 @@ class Invoice extends Model
         'discount_total',
         'tax_total',
         'total',
+        'stamp_duty',
         'payment_terms_days',
         'notes',
         'terms',
@@ -68,6 +70,7 @@ class Invoice extends Model
             'discount_total' => 'decimal:3',
             'tax_total' => 'decimal:3',
             'total' => 'decimal:3',
+            'stamp_duty' => 'decimal:3',
             'payment_terms_days' => 'integer',
             'posted_at' => 'datetime',
         ];

@@ -57,6 +57,8 @@ class Edit extends Component
 
     public bool $is_active = true;
 
+    public bool $is_stamp_duty_exempt = false;
+
     public function mount(int $customerId, CurrentCompany $currentCompany): void
     {
         $customer = Customer::findOrFail($customerId);
@@ -92,6 +94,7 @@ class Edit extends Component
         $this->account_id = $customer->account_id;
         $this->notes = $customer->notes;
         $this->is_active = $customer->is_active;
+        $this->is_stamp_duty_exempt = $customer->is_stamp_duty_exempt;
     }
 
     /** @return array<string, list<string|ValidationRule>> */
@@ -118,6 +121,7 @@ class Edit extends Component
             'account_id' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['boolean'],
+            'is_stamp_duty_exempt' => ['boolean'],
         ];
     }
 

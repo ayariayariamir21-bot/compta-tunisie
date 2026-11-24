@@ -18,8 +18,10 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Notifications\BusinessNotification;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Accounting\TunisianTaxService;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\NotificationService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -49,6 +51,8 @@ class SalesInvoicePostingService
             $invoice->load(['lines.product', 'lines.taxRate', 'lines.salesAccount', 'customer', 'fiscalYear', 'accountingPeriod', 'journal']);
 
             $this->validatePreconditions($invoice);
+
+            $invoice->update(['invoice_number' => $this->definitiveNumber($invoice)]);
 
             $receivableAccountId = $this->resolveReceivableAccount($invoice);
             $this->validateReceivableAccount($receivableAccountId, $invoice);
@@ -106,6 +110,22 @@ class SalesInvoicePostingService
         );
 
         return $posted;
+    }
+
+    private function definitiveNumber(Invoice $invoice): string
+    {
+        $settings = CompanyAccountingSetting::where('company_id', $invoice->company_id)->first();
+        $prefix = $settings?->invoice_prefix ?: 'FAC';
+
+        return (new LegalDocumentNumberingService)->assignDefinitiveNumber(
+            Invoice::class,
+            'invoice_number',
+            'invoice_date',
+            $invoice->company_id,
+            $prefix,
+            $invoice->invoice_date,
+            $settings !== null ? (int) $settings->invoice_next_number : 1,
+        );
     }
 
     private function validatePreconditions(Invoice $invoice): void
@@ -241,6 +261,17 @@ class SalesInvoicePostingService
                 'description' => "TVA collectée — Facture {$invoice->invoice_number}",
                 'debit' => '0.000',
                 'credit' => $amount,
+            ]);
+        }
+
+        $stampDuty = Decimal::round((string) $invoice->stamp_duty);
+        if (bccomp($stampDuty, '0', 3) > 0) {
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => (new TunisianTaxService)->systemAccountId($invoice->company_id, $invoice->fiscal_year_id, TunisianTaxService::STAMP_DUTY),
+                'description' => "Droit de timbre — Facture {$invoice->invoice_number}",
+                'debit' => '0.000',
+                'credit' => $stampDuty,
             ]);
         }
     }

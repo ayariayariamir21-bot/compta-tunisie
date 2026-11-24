@@ -205,6 +205,23 @@
                     </div>
                 </div>
 
+                {{-- Fiscalité tunisienne --}}
+                <div class="space-y-4">
+                    <flux:heading size="sm">Fiscalité</flux:heading>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <flux:input
+                            wire:model="stamp_duty_amount"
+                            label="Droit de timbre par facture (TND)"
+                            description="Ajouté au total TTC de chaque facture de vente, sauf pour les clients exonérés. Comptabilisé au compte 4435."
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            required
+                        />
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-4">
                     <flux:button variant="primary" type="submit" class="w-full sm:w-auto">
                         Enregistrer

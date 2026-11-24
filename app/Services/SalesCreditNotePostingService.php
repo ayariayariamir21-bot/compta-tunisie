@@ -48,6 +48,15 @@ class SalesCreditNotePostingService
 
             $this->validatePreconditions($locked, $invoice);
 
+            $locked->update(['credit_note_number' => (new LegalDocumentNumberingService)->assignDefinitiveNumber(
+                CreditNote::class,
+                'credit_note_number',
+                'credit_note_date',
+                $locked->company_id,
+                'AV',
+                $locked->credit_note_date,
+            )]);
+
             // Concurrency gate: credited quantities are recalculated inside
             // the locked transaction. Only POSTED credit notes count towards
             // credited quantities, so a competing draft posting sees the

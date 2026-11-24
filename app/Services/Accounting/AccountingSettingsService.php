@@ -8,12 +8,13 @@ use App\Models\Company;
 use App\Models\CompanyAccountingSetting;
 use App\Models\Journal;
 use App\Services\Security\AuditLogService;
+use App\Support\Decimal;
 use Illuminate\Support\Facades\DB;
 
 class AccountingSettingsService
 {
     public function __construct(
-
+        private ?AuditLogService $auditLog = null,
     ) {}
 
     private function audits(): AuditLogService
@@ -50,6 +51,7 @@ class AccountingSettingsService
                 'invoice_next_number' => 1,
                 'quote_prefix' => 'DEV',
                 'quote_next_number' => 1,
+                'stamp_duty_amount' => Decimal::round((string) config('accounting.stamp_duty_default', '0')),
             ]);
         });
     }
@@ -57,7 +59,7 @@ class AccountingSettingsService
     /**
      * Update accounting settings for a company.
      *
-     * @param  array{default_currency?: string, decimal_precision?: int, fiscal_year_start_month?: int, default_sales_journal_id?: int|null, default_purchase_journal_id?: int|null, default_bank_journal_id?: int|null, default_cash_journal_id?: int|null, default_misc_journal_id?: int|null, default_customer_account_id?: int|null, default_supplier_account_id?: int|null, default_sales_account_id?: int|null, default_purchase_account_id?: int|null, default_bank_account_id?: int|null, default_cash_account_id?: int|null, invoice_prefix?: string, invoice_next_number?: int, quote_prefix?: string, quote_next_number?: int}  $data
+     * @param  array{default_currency?: string, decimal_precision?: int, fiscal_year_start_month?: int, default_sales_journal_id?: int|null, default_purchase_journal_id?: int|null, default_bank_journal_id?: int|null, default_cash_journal_id?: int|null, default_misc_journal_id?: int|null, default_customer_account_id?: int|null, default_supplier_account_id?: int|null, default_sales_account_id?: int|null, default_purchase_account_id?: int|null, default_bank_account_id?: int|null, default_cash_account_id?: int|null, invoice_prefix?: string, invoice_next_number?: int, quote_prefix?: string, quote_next_number?: int, stamp_duty_amount?: string}  $data
      *
      * @throws \InvalidArgumentException
      */
@@ -88,7 +90,7 @@ class AccountingSettingsService
     /**
      * Validate default journal and account references.
      *
-     * @param  array{default_currency?: string, decimal_precision?: int, fiscal_year_start_month?: int, default_sales_journal_id?: int|null, default_purchase_journal_id?: int|null, default_bank_journal_id?: int|null, default_cash_journal_id?: int|null, default_misc_journal_id?: int|null, default_customer_account_id?: int|null, default_supplier_account_id?: int|null, default_sales_account_id?: int|null, default_purchase_account_id?: int|null, default_bank_account_id?: int|null, default_cash_account_id?: int|null, invoice_prefix?: string, invoice_next_number?: int, quote_prefix?: string, quote_next_number?: int}  $data
+     * @param  array{default_currency?: string, decimal_precision?: int, fiscal_year_start_month?: int, default_sales_journal_id?: int|null, default_purchase_journal_id?: int|null, default_bank_journal_id?: int|null, default_cash_journal_id?: int|null, default_misc_journal_id?: int|null, default_customer_account_id?: int|null, default_supplier_account_id?: int|null, default_sales_account_id?: int|null, default_purchase_account_id?: int|null, default_bank_account_id?: int|null, default_cash_account_id?: int|null, invoice_prefix?: string, invoice_next_number?: int, quote_prefix?: string, quote_next_number?: int, stamp_duty_amount?: string}  $data
      * @return array<string, mixed>
      *
      * @throws \InvalidArgumentException
@@ -145,6 +147,16 @@ class AccountingSettingsService
                     );
                 }
             }
+        }
+
+        if (array_key_exists('stamp_duty_amount', $data)) {
+            $stampDuty = Decimal::round((string) $data['stamp_duty_amount']);
+
+            if (bccomp($stampDuty, '0', 3) < 0) {
+                throw new \InvalidArgumentException('Le montant du droit de timbre ne peut pas être négatif.');
+            }
+
+            $data['stamp_duty_amount'] = $stampDuty;
         }
 
         return $data;

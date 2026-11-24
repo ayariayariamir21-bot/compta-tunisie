@@ -40,6 +40,7 @@ class CompanyAccountingSetting extends Model
         'invoice_next_number',
         'quote_prefix',
         'quote_next_number',
+        'stamp_duty_amount',
     ];
 
     protected function casts(): array
@@ -49,6 +50,7 @@ class CompanyAccountingSetting extends Model
             'fiscal_year_start_month' => 'integer',
             'invoice_next_number' => 'integer',
             'quote_next_number' => 'integer',
+            'stamp_duty_amount' => 'decimal:3',
         ];
     }
 

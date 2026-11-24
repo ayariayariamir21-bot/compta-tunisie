@@ -10,7 +10,7 @@ class CustomerService
     /**
      * Create a new customer.
      *
-     * @param  array{company_id: int, fiscal_year_id: int, code: string, name: string, customer_type?: string, tax_identifier?: string|null, account_id?: int|null, credit_limit?: string|null, is_active?: bool, legal_name?: string|null, rne?: string|null, address?: string|null, postal_code?: string|null, city?: string|null, governorate?: string|null, country?: string, phone?: string|null, mobile?: string|null, email?: string|null, website?: string|null, payment_terms_days?: int, notes?: string|null}  $data
+     * @param  array{company_id: int, fiscal_year_id: int, code: string, name: string, customer_type?: string, tax_identifier?: string|null, account_id?: int|null, credit_limit?: string|null, is_active?: bool, legal_name?: string|null, rne?: string|null, address?: string|null, postal_code?: string|null, city?: string|null, governorate?: string|null, country?: string, phone?: string|null, mobile?: string|null, email?: string|null, website?: string|null, payment_terms_days?: int, notes?: string|null, is_stamp_duty_exempt?: bool}  $data
      *
      * @throws \InvalidArgumentException
      */
@@ -31,7 +31,7 @@ class CustomerService
     /**
      * Update a customer.
      *
-     * @param  array{company_id?: int, fiscal_year_id?: int, code: string, name: string, customer_type?: string, tax_identifier?: string|null, account_id?: int|null, credit_limit?: string|null, is_active?: bool, legal_name?: string|null, rne?: string|null, address?: string|null, postal_code?: string|null, city?: string|null, governorate?: string|null, country?: string, phone?: string|null, mobile?: string|null, email?: string|null, website?: string|null, payment_terms_days?: int, notes?: string|null}  $data
+     * @param  array{company_id?: int, fiscal_year_id?: int, code: string, name: string, customer_type?: string, tax_identifier?: string|null, account_id?: int|null, credit_limit?: string|null, is_active?: bool, legal_name?: string|null, rne?: string|null, address?: string|null, postal_code?: string|null, city?: string|null, governorate?: string|null, country?: string, phone?: string|null, mobile?: string|null, email?: string|null, website?: string|null, payment_terms_days?: int, notes?: string|null, is_stamp_duty_exempt?: bool}  $data
      *
      * @throws \InvalidArgumentException
      */

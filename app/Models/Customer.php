@@ -36,6 +36,7 @@ class Customer extends Model
         'credit_limit',
         'is_active',
         'notes',
+        'is_stamp_duty_exempt',
     ];
 
     protected function casts(): array
@@ -45,6 +46,7 @@ class Customer extends Model
             'payment_terms_days' => 'integer',
             'credit_limit' => 'decimal:3',
             'is_active' => 'boolean',
+            'is_stamp_duty_exempt' => 'boolean',
         ];
     }
 

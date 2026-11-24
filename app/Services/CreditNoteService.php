@@ -36,38 +36,6 @@ class CreditNoteService
     }
 
     /**
-     * Numbering strategy: AV-{YEAR}-{NNNNNN} scoped per company.
-     * The next number is derived from the highest existing number for the
-     * current prefix (all statuses included, so numbers are never reused),
-     * then uniqueness is verified before returning; the database unique
-     * constraint on (company_id, credit_note_number) backstops concurrent
-     * generations.
-     */
-    public function generateCreditNoteNumber(int $companyId): string
-    {
-        $year = (int) now()->year;
-        $prefix = "AV-{$year}-";
-        $maxTries = 10;
-
-        $maxNumber = CreditNote::where('company_id', $companyId)
-            ->where('credit_note_number', 'like', $prefix.'%')
-            ->pluck('credit_note_number')
-            ->map(fn (string $num) => (int) substr($num, strlen($prefix)))
-            ->filter(fn (int $num) => $num > 0)
-            ->max() ?? 0;
-
-        for ($attempt = 0; $attempt < $maxTries; $attempt++) {
-            $maxNumber++;
-            $candidate = $prefix.str_pad((string) $maxNumber, 6, '0', STR_PAD_LEFT);
-            if (! CreditNote::where('company_id', $companyId)->where('credit_note_number', $candidate)->exists()) {
-                return $candidate;
-            }
-        }
-
-        throw new \RuntimeException('Impossible de générer un numéro d\'avoir unique après '.$maxTries.' tentatives.');
-    }
-
-    /**
      * @param  array{company_id: int, customer_id: int, fiscal_year_id: int, accounting_period_id: int, journal_id: int, invoice_id: int, credit_note_date: string, reason?: string|null, currency?: string, notes?: string|null, created_by: int, lines: array<int, array{invoice_line_id: int, product_id: int, description: string, quantity: string, unit: string, unit_price: string, discount_percent: string, tax_rate_id?: int|null, tax_code?: string|null, tax_rate_value?: string, sales_account_id?: int|null}>}  $data
      */
     public function createDraft(array $data): CreditNote
@@ -86,7 +54,7 @@ class CreditNoteService
         $this->validateCreditNoteDateInPeriod($data['credit_note_date'], (int) $data['accounting_period_id']);
         $this->validateLines($data['lines'], $invoice);
 
-        $data['credit_note_number'] = $this->generateCreditNoteNumber($companyId);
+        $data['credit_note_number'] = (new LegalDocumentNumberingService)->provisionalNumber();
         $data['status'] = CreditNoteStatus::DRAFT;
         if (($data['currency'] ?? null) === null || $data['currency'] === '') {
             $data['currency'] = 'TND';

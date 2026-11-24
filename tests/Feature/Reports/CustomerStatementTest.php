@@ -693,10 +693,11 @@ it('returns zero balances for a customer without posted documents', function () 
 // ---------- Ordering ----------
 
 it('orders rows deterministically by date, type priority, document number then id', function () {
+    // Invoices must be issued in chronological order (unbroken legal numbering).
+    csPostInvoice($this, '2026-01-09', '70.000');
     $a = csPostInvoice($this, '2026-01-10');
     csPostCreditNote($this, $a, '50.000', '2026-01-10');
     csPostPayment($this, '60.000', '2026-01-10');
-    csPostInvoice($this, '2026-01-09', '70.000');
 
     $entries = csStatementService()->getStatementEntries($this->customer);
     $types = array_column($entries, 'type');

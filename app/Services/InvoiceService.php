@@ -9,7 +9,6 @@ use App\Enums\InvoiceStatus;
 use App\Enums\QuoteStatus;
 use App\Models\Account;
 use App\Models\AccountingPeriod;
-use App\Models\CompanyAccountingSetting;
 use App\Models\Customer;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
@@ -19,6 +18,7 @@ use App\Models\Product;
 use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Models\TaxRate;
+use App\Services\Accounting\TunisianTaxService;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use App\Support\Decimal;
@@ -51,7 +51,7 @@ class InvoiceService
         $this->validateInvoiceDateInPeriod($data['invoice_date'], (int) $data['accounting_period_id']);
         $this->validateLines($data['lines'], $companyId);
 
-        $data['invoice_number'] = $this->generateInvoiceNumber($companyId);
+        $data['invoice_number'] = (new LegalDocumentNumberingService)->provisionalNumber();
         $data['status'] = InvoiceStatus::DRAFT;
 
         if (($data['due_date'] ?? null) === '') {
@@ -199,39 +199,6 @@ class InvoiceService
         return $this->createDraft($data);
     }
 
-    public function generateInvoiceNumber(int $companyId): string
-    {
-        $year = (int) now()->year;
-        $prefix = "FAC-{$year}-";
-        $maxTries = 10;
-
-        $settings = CompanyAccountingSetting::where('company_id', $companyId)->first();
-        if ($settings && $settings->invoice_prefix) {
-            $prefix = $settings->invoice_prefix.'-'.$year.'-';
-        }
-
-        $maxNumber = Invoice::where('company_id', $companyId)
-            ->where('invoice_number', 'like', $prefix.'%')
-            ->pluck('invoice_number')
-            ->map(fn (string $num) => (int) substr($num, strlen($prefix)))
-            ->filter(fn (int $num) => $num > 0)
-            ->max() ?? 0;
-
-        if ($settings && $settings->invoice_next_number > $maxNumber) {
-            $maxNumber = $settings->invoice_next_number - 1;
-        }
-
-        for ($attempt = 0; $attempt < $maxTries; $attempt++) {
-            $maxNumber++;
-            $candidate = $prefix.str_pad((string) $maxNumber, 6, '0', STR_PAD_LEFT);
-            if (! Invoice::where('company_id', $companyId)->where('invoice_number', $candidate)->exists()) {
-                return $candidate;
-            }
-        }
-
-        throw new \RuntimeException('Impossible de générer un numéro de facture unique après '.$maxTries.' tentatives.');
-    }
-
     /**
      * @return array{quantity: string, unit_price: string, discount_percent: string, discount_amount: string, tax_rate_value: string, tax_amount: string, line_subtotal: string, line_total: string}
      */
@@ -279,11 +246,16 @@ class InvoiceService
             $total = bcadd($total, (string) $line->line_total, 3);
         }
 
+        $stampDuty = $invoice->status === InvoiceStatus::DRAFT
+            ? (new TunisianTaxService)->stampDutyFor($invoice->customer()->firstOrFail())
+            : Decimal::round((string) $invoice->stamp_duty);
+
         $invoice->update([
             'subtotal' => $subtotal,
             'discount_total' => $discountTotal,
             'tax_total' => $taxTotal,
-            'total' => $total,
+            'stamp_duty' => $stampDuty,
+            'total' => bcadd($total, $stampDuty, 3),
         ]);
 
         return $invoice->fresh();

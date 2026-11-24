@@ -104,6 +104,12 @@
                         <dt class="text-sm text-gray-500 dark:text-gray-400">TVA totale :</dt>
                         <dd class="text-sm text-gray-900 dark:text-white">{{ number_format((float) $invoice->tax_total, 3, '.', '') }} {{ $invoice->currency }}</dd>
                     </div>
+                    @if (bccomp((string) $invoice->stamp_duty, '0', 3) > 0)
+                        <div class="flex justify-between">
+                            <dt class="text-sm text-gray-500 dark:text-gray-400">Droit de timbre :</dt>
+                            <dd class="text-sm text-gray-900 dark:text-white">{{ number_format((float) $invoice->stamp_duty, 3, '.', '') }} {{ $invoice->currency }}</dd>
+                        </div>
+                    @endif
                     <div class="flex justify-between border-t border-gray-200 pt-3 dark:border-gray-700">
                         <dt class="text-base font-semibold text-gray-900 dark:text-white">Total TTC :</dt>
                         <dd class="text-base font-semibold text-gray-900 dark:text-white">{{ number_format((float) $invoice->total, 3, '.', '') }} {{ $invoice->currency }}</dd>

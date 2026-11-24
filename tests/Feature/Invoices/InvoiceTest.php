@@ -206,7 +206,7 @@ it('creates a draft invoice', function () {
     expect($invoice->company_id)->toBe($this->company->id);
 });
 
-it('generates invoice number with FAC prefix and current year', function () {
+it('gives drafts a provisional number and assigns the FAC number at posting', function () {
     $service = new InvoiceService(new SalesInvoicePostingService(
         new JournalEntryService
     ));
@@ -214,9 +214,56 @@ it('generates invoice number with FAC prefix and current year', function () {
     $data['created_by'] = $this->user->id;
 
     $invoice = $service->createDraft($data);
+    expect($invoice->invoice_number)->toStartWith('BR-');
 
-    expect($invoice->invoice_number)->toMatch('/^FAC-\d{4}-\d{6}$/');
+    $posted = $service->post($invoice, $this->user->id);
+
+    expect($posted->invoice_number)->toBe('FAC-2026-000001');
+    expect($posted->journalEntry->reference)->toBe('FAC-2026-000001');
 });
+
+it('keeps the legal numbering unbroken when drafts are deleted', function () {
+    $service = new InvoiceService(new SalesInvoicePostingService(
+        new JournalEntryService
+    ));
+    $data = makeInvoiceData($this->company, $this->customer, $this->product, $this->taxRate, $this->journal);
+    $data['created_by'] = $this->user->id;
+
+    $first = $service->createDraft($data);
+    $deleted = $service->createDraft($data);
+    $third = $service->createDraft($data);
+    $service->deleteDraft($deleted);
+
+    expect($service->post($first, $this->user->id)->invoice_number)->toBe('FAC-2026-000001')
+        ->and($service->post($third, $this->user->id)->invoice_number)->toBe('FAC-2026-000002');
+});
+
+it('uses the invoice date year for the legal number', function () {
+    $service = new InvoiceService(new SalesInvoicePostingService(
+        new JournalEntryService
+    ));
+    $this->travelTo('2027-01-03');
+    $data = makeInvoiceData($this->company, $this->customer, $this->product, $this->taxRate, $this->journal);
+    $data['created_by'] = $this->user->id;
+
+    $posted = $service->post($service->createDraft($data), $this->user->id);
+
+    expect($posted->invoice_number)->toBe('FAC-2026-000001');
+});
+
+it('rejects posting an invoice dated before the last issued invoice', function () {
+    $service = new InvoiceService(new SalesInvoicePostingService(
+        new JournalEntryService
+    ));
+    $data = makeInvoiceData($this->company, $this->customer, $this->product, $this->taxRate, $this->journal);
+    $data['created_by'] = $this->user->id;
+    $later = $service->createDraft($data);
+    $data['invoice_date'] = '2026-01-10';
+    $earlier = $service->createDraft($data);
+
+    $service->post($later, $this->user->id);
+    $service->post($earlier, $this->user->id);
+})->throws(InvalidArgumentException::class, 'Numérotation chronologique');
 
 it('generates sequential invoice numbers', function () {
     $service = new InvoiceService(new SalesInvoicePostingService(
@@ -302,7 +349,8 @@ it('scopes invoice numbering per company', function () {
     unset($data2['lines'][0]['tax_rate_id']);
     $second = $service->createDraft($data2);
 
-    expect($second->invoice_number)->toBe($first->invoice_number);
+    expect($first->invoice_number)->toStartWith('BR-')
+        ->and($second->invoice_number)->toStartWith('BR-');
 });
 
 it('calculates line totals with discount and VAT correctly', function () {
@@ -960,4 +1008,47 @@ it('searches invoices by number on the index page', function () {
     Livewire::test(Index::class)
         ->set('search', substr((string) $draft->invoice_number, -3))
         ->assertSee($draft->invoice_number);
+});
+
+// ---------- Droit de timbre ----------
+
+it('adds the company stamp duty to the invoice total and posts it to account 4435', function () {
+    CompanyAccountingSetting::create(['company_id' => $this->company->id, 'stamp_duty_amount' => '1.000']);
+
+    $invoice = createDraftForTest($this);
+    $linesTotal = $invoice->lines->reduce(fn (string $carry, $line) => bcadd($carry, (string) $line->line_total, 3), '0.000');
+
+    expect((string) $invoice->stamp_duty)->toBe('1.000')
+        ->and((string) $invoice->total)->toBe(bcadd($linesTotal, '1.000', 3));
+
+    $posted = app(InvoiceService::class)->post($invoice, $this->user->id);
+    $entry = $posted->journalEntry->load('lines.account');
+    $stampLine = $entry->lines->firstWhere('account.code', '4435');
+
+    expect($entry->isBalanced())->toBeTrue()
+        ->and($stampLine)->not->toBeNull()
+        ->and((string) $stampLine->credit)->toBe('1.000')
+        ->and((string) $entry->totalDebit())->toBe((string) $posted->total);
+});
+
+it('does not charge stamp duty to exempt customers', function () {
+    CompanyAccountingSetting::create(['company_id' => $this->company->id, 'stamp_duty_amount' => '1.000']);
+    $this->customer->update(['is_stamp_duty_exempt' => true]);
+
+    $invoice = createDraftForTest($this);
+
+    expect((string) $invoice->stamp_duty)->toBe('0.000');
+
+    $posted = app(InvoiceService::class)->post($invoice, $this->user->id);
+
+    expect($posted->journalEntry->lines()->whereHas('account', fn ($query) => $query->where('code', '4435'))->exists())->toBeFalse();
+});
+
+it('keeps the stamp duty of a posted invoice when settings change later', function () {
+    $settings = CompanyAccountingSetting::create(['company_id' => $this->company->id, 'stamp_duty_amount' => '1.000']);
+
+    $posted = app(InvoiceService::class)->post(createDraftForTest($this), $this->user->id);
+    $settings->update(['stamp_duty_amount' => '2.000']);
+
+    expect((string) $posted->fresh()->stamp_duty)->toBe('1.000');
 });

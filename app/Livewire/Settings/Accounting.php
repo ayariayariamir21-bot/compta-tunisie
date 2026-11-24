@@ -52,6 +52,8 @@ class Accounting extends Component
 
     public int $quote_next_number = 1;
 
+    public string $stamp_duty_amount = '0.000';
+
     public function mount(CurrentCompany $currentCompany, CurrentFiscalYear $currentFiscalYear): void
     {
         $company = $currentCompany->get(Auth::user());
@@ -82,6 +84,7 @@ class Accounting extends Component
             'invoice_next_number' => $settings->invoice_next_number,
             'quote_prefix' => $settings->quote_prefix,
             'quote_next_number' => $settings->quote_next_number,
+            'stamp_duty_amount' => (string) $settings->stamp_duty_amount,
         ]);
     }
 
@@ -116,6 +119,7 @@ class Accounting extends Component
             'invoice_next_number' => 'required|integer|min:1',
             'quote_prefix' => 'nullable|string|max:20',
             'quote_next_number' => 'required|integer|min:1',
+            'stamp_duty_amount' => 'required|numeric|min:0|max:1000',
         ]);
 
         $fiscalYear = $currentFiscalYear->get(Auth::user());
