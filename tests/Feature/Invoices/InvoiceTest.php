@@ -744,16 +744,62 @@ it('fails posting when no receivable account is available', function () {
     $service->post($invoice, $this->user->id);
 })->throws(InvalidArgumentException::class, 'Aucun compte client configuré');
 
-it('fails posting when tax rate has no sales tax account', function () {
+it('posts VAT to the standard 445 account of the fiscal year when the tax rate has none', function () {
     $service = new InvoiceService(new SalesInvoicePostingService(
         new JournalEntryService
     ));
     $this->taxRate->update(['sales_tax_account_id' => null]);
 
-    $invoice = createDraftForTest($this);
+    $posted = $service->post(createDraftForTest($this), $this->user->id);
+    $vatLine = $posted->journalEntry->lines()->with('account')->get()->firstWhere('account.code', '445');
 
-    $service->post($invoice, $this->user->id);
-})->throws(InvalidArgumentException::class, 'Compte de vente (TVA)');
+    expect($vatLine)->not->toBeNull()
+        ->and($vatLine->account->fiscal_year_id)->toBe($posted->fiscal_year_id)
+        ->and((string) $vatLine->credit)->toBe((string) $posted->tax_total);
+});
+
+it('posts VAT to the same account code in the fiscal year of the invoice', function () {
+    $nextYear = FiscalYear::create([
+        'company_id' => $this->company->id, 'name' => 'Exercice 2027', 'code' => '2027',
+        'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'is_active' => true, 'is_closed' => false,
+    ]);
+    $nextPeriod = AccountingPeriod::create([
+        'fiscal_year_id' => $nextYear->id, 'name' => 'Janvier 2027', 'code' => '2027-01',
+        'start_date' => '2027-01-01', 'end_date' => '2027-01-31', 'is_open' => true, 'is_closed' => false,
+    ]);
+    $configuredCode = Account::findOrFail($this->taxRate->sales_tax_account_id)->code;
+    $nextYearVat = Account::create([
+        'company_id' => $this->company->id, 'fiscal_year_id' => $nextYear->id, 'code' => $configuredCode,
+        'name' => 'TVA collectée 2027', 'account_type' => 'liability', 'is_active' => true,
+    ]);
+    foreach ([$this->account411, $this->account707] as $account) {
+        Account::create([
+            'company_id' => $this->company->id, 'fiscal_year_id' => $nextYear->id, 'code' => $account->code,
+            'name' => $account->name, 'account_type' => $account->account_type, 'is_active' => true,
+        ]);
+    }
+    $journal = Journal::create([
+        'company_id' => $this->company->id, 'fiscal_year_id' => $nextYear->id, 'code' => 'VTE',
+        'name' => 'Ventes', 'type' => 'ventes', 'is_active' => true,
+    ]);
+    $this->customer->update(['account_id' => null]);
+    CompanyAccountingSetting::create([
+        'company_id' => $this->company->id,
+        'default_customer_account_id' => Account::where('fiscal_year_id', $nextYear->id)->where('code', $this->account411->code)->value('id'),
+    ]);
+
+    $invoice = createDraftForTest($this);
+    $invoice->update([
+        'fiscal_year_id' => $nextYear->id, 'accounting_period_id' => $nextPeriod->id,
+        'journal_id' => $journal->id, 'invoice_date' => '2027-01-15',
+    ]);
+    $invoice->lines()->update(['sales_account_id' => Account::where('fiscal_year_id', $nextYear->id)->where('code', $this->account707->code)->value('id')]);
+
+    $posted = app(InvoiceService::class)->post($invoice->fresh(), $this->user->id);
+
+    expect($posted->journalEntry->lines()->where('account_id', $nextYearVat->id)->exists())->toBeTrue()
+        ->and($posted->journalEntry->lines()->where('account_id', $this->taxRate->sales_tax_account_id)->exists())->toBeFalse();
+});
 
 it('rejects posting an already posted invoice', function () {
     $service = new InvoiceService(new SalesInvoicePostingService(

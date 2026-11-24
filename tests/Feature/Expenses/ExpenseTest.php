@@ -758,7 +758,7 @@ it('fails clearly without any payment method or supplier', function () {
     exService()->post(Expense::first(), $this->user->id);
 })->throws(InvalidArgumentException::class, 'Aucun mode de règlement ni fournisseur');
 
-it('fails when the tax rate has no recoverable VAT account', function () {
+it('posts recoverable VAT to the standard 444 account when the tax rate has none', function () {
     TaxRate::create([
         'company_id' => $this->company->id,
         'code' => 'TVA7',
@@ -782,8 +782,12 @@ it('fails when the tax rate has no recoverable VAT account', function () {
         ]],
     ]);
 
-    exService()->post(Expense::first(), $this->user->id);
-})->throws(RuntimeException::class, "Aucun compte de TVA récupérable n'est configuré pour le taux");
+    $posted = exService()->post(Expense::first(), $this->user->id);
+    $vatLine = $posted->journalEntry->lines()->with('account')->get()->firstWhere('account.code', '444');
+
+    expect($vatLine)->not->toBeNull()
+        ->and((string) $vatLine->debit)->toBe('7.000');
+});
 
 it('refuses posting into a closed period', function () {
     $expense = createDraftExpenseForTest($this);

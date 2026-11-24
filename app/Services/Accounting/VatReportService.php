@@ -392,24 +392,20 @@ class VatReportService
      */
     private function resolveVatAccounts(Company $company, FiscalYear $fiscalYear): array
     {
-        $rates = TaxRate::query()
-            ->where('company_id', $company->id)
-            ->get(['sales_tax_account_id', 'purchase_tax_account_id']);
+        $taxService = new TunisianTaxService;
+        $outputCodes = $taxService->vatAccountCodes($company->id, 'sales');
+        $inputCodes = $taxService->vatAccountCodes($company->id, 'purchase');
 
-        $outputIds = $rates->pluck('sales_tax_account_id')->filter()->map(fn ($id) => (int) $id)->unique()->all();
-        $inputIds = $rates->pluck('purchase_tax_account_id')->filter()->map(fn ($id) => (int) $id)->unique()->all();
-
-        $accountsById = Account::query()
+        $accounts = Account::query()
             ->where('company_id', $company->id)
             ->where('fiscal_year_id', $fiscalYear->id)
-            ->whereIn('id', array_merge($outputIds, $inputIds))
+            ->whereIn('code', array_merge($outputCodes, $inputCodes))
             ->orderBy('code')
-            ->get()
-            ->keyBy('id');
+            ->get();
 
         return [
-            $accountsById->only($outputIds),
-            $accountsById->only($inputIds),
+            $accounts->filter(fn (Account $account): bool => in_array($account->code, $outputCodes, true))->keyBy('id'),
+            $accounts->filter(fn (Account $account): bool => in_array($account->code, $inputCodes, true))->keyBy('id'),
         ];
     }
 

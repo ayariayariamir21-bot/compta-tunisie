@@ -26,6 +26,8 @@ return [
     */
 
     'system_accounts' => [
+        'vat_collected' => ['code' => '445', 'name' => 'TVA collectée', 'type' => 'liability', 'parent' => '44'],
+        'vat_deductible' => ['code' => '444', 'name' => 'TVA déductible', 'type' => 'asset', 'parent' => '44'],
         'stamp_duty' => ['code' => '4435', 'name' => 'État — droit de timbre à payer', 'type' => 'liability', 'parent' => '443'],
         'withholding_payable' => ['code' => '4434', 'name' => 'État — retenues à la source à payer', 'type' => 'liability', 'parent' => '443'],
         'withholding_receivable' => ['code' => '4421', 'name' => 'État — retenues à la source subies', 'type' => 'asset', 'parent' => '442'],

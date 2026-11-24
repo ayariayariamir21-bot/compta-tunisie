@@ -17,6 +17,7 @@ use App\Models\InvoiceLine;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Accounting\TunisianTaxService;
 use App\Services\Security\AuditLogService;
 use App\Support\Decimal;
 use Carbon\Carbon;
@@ -246,7 +247,7 @@ class SalesCreditNotePostingService
             $salesAccountTotals[$salesAccountId] = bcadd($salesAccountTotals[$salesAccountId], (string) $line->line_subtotal, 3);
 
             if (bccomp((string) $line->tax_amount, '0', 3) > 0) {
-                $taxAccountId = $this->resolveTaxAccount($line);
+                $taxAccountId = $this->resolveTaxAccount($line, $creditNote);
                 if (! isset($taxAccountTotals[$taxAccountId])) {
                     $taxAccountTotals[$taxAccountId] = '0';
                 }
@@ -283,13 +284,9 @@ class SalesCreditNotePostingService
         ]);
     }
 
-    private function resolveTaxAccount(CreditNoteLine $line): int
+    private function resolveTaxAccount(CreditNoteLine $line, CreditNote $creditNote): int
     {
-        if ($line->taxRate && $line->taxRate->sales_tax_account_id) {
-            return $line->taxRate->sales_tax_account_id;
-        }
-
-        throw new \InvalidArgumentException("Aucun compte de TVA collectée n'est configuré pour le taux « {$line->tax_code} ». Veuillez configurer le champ « Compte de vente (TVA) » sur ce taux de taxe.");
+        return (new TunisianTaxService)->vatAccountId($line->taxRate, $creditNote->company_id, $creditNote->fiscal_year_id, 'sales');
     }
 
     /**

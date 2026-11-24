@@ -236,7 +236,7 @@ class SalesInvoicePostingService
             $salesAccountTotals[$salesAccountId] = bcadd($salesAccountTotals[$salesAccountId], (string) $line->line_subtotal, 3);
 
             if (bccomp((string) $line->tax_amount, '0', 3) > 0) {
-                $taxAccountId = $this->resolveTaxAccount($line);
+                $taxAccountId = $this->resolveTaxAccount($line, $invoice);
                 if (! isset($taxAccountTotals[$taxAccountId])) {
                     $taxAccountTotals[$taxAccountId] = '0';
                 }
@@ -276,12 +276,8 @@ class SalesInvoicePostingService
         }
     }
 
-    private function resolveTaxAccount(InvoiceLine $line): int
+    private function resolveTaxAccount(InvoiceLine $line, Invoice $invoice): int
     {
-        if ($line->taxRate && $line->taxRate->sales_tax_account_id) {
-            return $line->taxRate->sales_tax_account_id;
-        }
-
-        throw new \InvalidArgumentException("Aucun compte de TVA collectée n'est configuré pour le taux « {$line->tax_code} ». Veuillez configurer le champ « Compte de vente (TVA) » sur ce taux de taxe.");
+        return (new TunisianTaxService)->vatAccountId($line->taxRate, $invoice->company_id, $invoice->fiscal_year_id, 'sales');
     }
 }

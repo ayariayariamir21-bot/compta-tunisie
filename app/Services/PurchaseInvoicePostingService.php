@@ -19,6 +19,7 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceLine;
 use App\Notifications\BusinessNotification;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Accounting\TunisianTaxService;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\NotificationService;
 use Carbon\Carbon;
@@ -239,7 +240,7 @@ class PurchaseInvoicePostingService
             $purchaseAccountTotals[$purchaseAccountId] = bcadd($purchaseAccountTotals[$purchaseAccountId], (string) $line->line_subtotal, 3);
 
             if (bccomp((string) $line->tax_amount, '0', 3) > 0) {
-                $taxAccountId = $this->resolveTaxAccountId($line);
+                $taxAccountId = $this->resolveTaxAccountId($line, $invoice);
                 if (! isset($taxAccountTotals[$taxAccountId])) {
                     $taxAccountTotals[$taxAccountId] = '0';
                 }
@@ -268,12 +269,8 @@ class PurchaseInvoicePostingService
         }
     }
 
-    private function resolveTaxAccountId(PurchaseInvoiceLine $line): int
+    private function resolveTaxAccountId(PurchaseInvoiceLine $line, PurchaseInvoice $invoice): int
     {
-        if ($line->taxRate && $line->taxRate->purchase_tax_account_id) {
-            return $line->taxRate->purchase_tax_account_id;
-        }
-
-        throw new \InvalidArgumentException("Aucun compte de TVA récupérable n'est configuré pour le taux « {$line->tax_code} ». Veuillez configurer le champ « Compte d'achat (TVA) » sur ce taux de taxe.");
+        return (new TunisianTaxService)->vatAccountId($line->taxRate, $invoice->company_id, $invoice->fiscal_year_id, 'purchase');
     }
 }

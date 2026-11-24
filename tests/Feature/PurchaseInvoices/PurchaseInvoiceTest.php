@@ -854,16 +854,19 @@ it('fails when no supplier account can be resolved', function () {
     $service->post($invoice, $this->user->id);
 })->throws(InvalidArgumentException::class, 'Aucun compte fournisseur configuré');
 
-it('fails when the tax rate has no recoverable VAT account', function () {
+it('posts recoverable VAT to the standard 444 account when the tax rate has none', function () {
     $this->taxRate->update(['purchase_tax_account_id' => null]);
 
     $service = new PurchaseInvoiceService(new PurchaseInvoicePostingService(
         new JournalEntryService
     ));
-    $invoice = createPurchaseDraftForTest($this);
+    $posted = $service->post(createPurchaseDraftForTest($this), $this->user->id);
 
-    $service->post($invoice, $this->user->id);
-})->throws(InvalidArgumentException::class, "Compte d'achat (TVA)");
+    $vatLine = $posted->journalEntry->lines()->with('account')->get()->firstWhere('account.code', '444');
+
+    expect($vatLine)->not->toBeNull()
+        ->and((string) $vatLine->debit)->toBe((string) $posted->tax_total);
+});
 
 it('fails when no purchase account can be resolved', function () {
     Product::query()->where('company_id', $this->company->id)->update(['purchase_account_id' => null]);

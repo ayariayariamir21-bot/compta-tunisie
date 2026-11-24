@@ -251,7 +251,7 @@ class ExpensePostingService
             $expenseAccountTotals[$accountId] = bcadd($expenseAccountTotals[$accountId], (string) $line->line_subtotal, 3);
 
             if (bccomp((string) $line->tax_amount, '0', 3) > 0) {
-                $taxAccountId = $this->resolveTaxAccountId($line);
+                $taxAccountId = $this->resolveTaxAccountId($line, $expense);
                 if (! isset($taxAccountTotals[$taxAccountId])) {
                     $taxAccountTotals[$taxAccountId] = '0';
                 }
@@ -288,12 +288,8 @@ class ExpensePostingService
         ]);
     }
 
-    private function resolveTaxAccountId(ExpenseLine $line): int
+    private function resolveTaxAccountId(ExpenseLine $line, Expense $expense): int
     {
-        if ($line->taxRate && $line->taxRate->purchase_tax_account_id) {
-            return $line->taxRate->purchase_tax_account_id;
-        }
-
-        throw new \RuntimeException("Aucun compte de TVA récupérable n'est configuré pour le taux « {$line->tax_code} ». Veuillez configurer le champ « Compte d'achat (TVA) » sur ce taux de taxe.");
+        return (new TunisianTaxService)->vatAccountId($line->taxRate, $expense->company_id, $expense->fiscal_year_id, 'purchase');
     }
 }
