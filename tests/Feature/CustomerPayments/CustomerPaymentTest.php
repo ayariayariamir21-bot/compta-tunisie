@@ -931,3 +931,18 @@ it('recomputes the withholding when the payment amount changes', function () {
 it('rejects a withholding equal to the whole payment', function () {
     createDraftPaymentForTest($this, ['amount' => '100.000', 'withholding_rate' => '100']);
 })->throws(InvalidArgumentException::class, 'retenue à la source');
+
+it('prefills the payment form from the invoice link query string', function () {
+    $invoice = createPostedInvoiceForPaymentTest($this);
+    $this->actingAs($this->user);
+    session(['current_company_id' => $this->company->id, 'current_fiscal_year_id' => $this->fiscalYear->id]);
+
+    $this->get(route('customer-payments.create', ['invoice' => $invoice->id]))
+        ->assertOk()
+        ->assertSee($invoice->invoice_number);
+
+    Livewire::withQueryParams(['invoice' => $invoice->id])
+        ->test(Create::class)
+        ->assertSet('customer_id', $invoice->customer_id)
+        ->assertSet('amount', (string) $invoice->total);
+});

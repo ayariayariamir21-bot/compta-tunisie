@@ -56,6 +56,9 @@ class Create extends Component
 
     public function mount(?int $invoice = null): void
     {
+        // Links from an invoice pass it as ?invoice=ID (query string, not a route parameter).
+        $invoice ??= request()->integer('invoice') ?: null;
+
         $this->payment_date = now()->toDateString();
 
         if ($invoice !== null) {
