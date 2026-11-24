@@ -76,3 +76,15 @@ it('rejects an unknown enum value with a validation error', function () {
         ->call('store')
         ->assertHasErrors(['customer_type']);
 });
+
+it('shows validation messages in French', function () {
+    app()->setLocale('fr');
+
+    $component = Livewire::test(App\Livewire\Customers\Create::class)
+        ->set('code', '')
+        ->call('store')
+        ->assertHasErrors(['code']);
+
+    expect($component->errors()->first('code'))->toStartWith('Le champ')
+        ->and(__('Log in'))->toBe('Se connecter');
+});
