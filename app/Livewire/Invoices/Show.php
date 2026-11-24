@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Services\CurrentCompany;
 use App\Services\InvoiceService;
+use App\Services\Reporting\SalesDocumentMailer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
@@ -92,5 +93,21 @@ class Show extends Component
     public function render(): View
     {
         return view('livewire.invoices.show');
+    }
+
+    public function sendByEmail(SalesDocumentMailer $mailer): void
+    {
+        if (Auth::user()->cannot('view', $this->invoice)) {
+            abort(403);
+        }
+
+        try {
+            $recipient = $mailer->sendInvoice($this->invoice);
+            session()->flash('success', "La facture « {$this->invoice->invoice_number} » a été envoyée à {$recipient}.");
+        } catch (\InvalidArgumentException $e) {
+            session()->flash('error', $e->getMessage());
+        }
+
+        $this->redirect(route('invoices.show', $this->invoice->id), navigate: true);
     }
 }

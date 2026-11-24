@@ -1018,3 +1018,44 @@ it('refuses a payment date outside the accounting period', function () {
 });
 
 // MARKER3B
+
+// ---------- Retenue à la source ----------
+
+it('posts a supplier payment with withholding: gross to payable, net from bank, withheld to 4434', function () {
+    $invoice = createPostedPurchaseInvoiceForPaymentTest($this);
+    $payment = createDraftSupplierPaymentForTest($this, [
+        'amount' => '400.000',
+        'withholding_rate' => '1.5',
+        'allocations' => [['purchase_invoice_id' => $invoice->id, 'amount' => '400.000']],
+    ]);
+
+    $posted = spService()->post($payment->fresh(), $this->user->id);
+    $lines = $posted->journalEntry->lines()->with('account')->get();
+
+    expect($posted->journalEntry->isBalanced())->toBeTrue()
+        ->and((string) $lines->firstWhere('debit', '!=', '0.000')->debit)->toBe('400.000')
+        ->and((string) $lines->firstWhere('account_id', $this->account532->id)->credit)->toBe('394.000')
+        ->and((string) $lines->firstWhere('account.code', '4434')->credit)->toBe('6.000');
+});
+
+it('serves the withholding certificate only for posted payments with a withholding', function () {
+    $invoice = createPostedPurchaseInvoiceForPaymentTest($this);
+    $payment = createDraftSupplierPaymentForTest($this, [
+        'amount' => '400.000',
+        'withholding_rate' => '1.5',
+        'allocations' => [['purchase_invoice_id' => $invoice->id, 'amount' => '400.000']],
+    ]);
+    $this->actingAs($this->user)->withSession(['current_company_id' => $this->company->id]);
+
+    $this->get(route('supplier-payments.withholding-certificate', $payment->id))->assertNotFound();
+
+    spService()->post($payment->fresh(), $this->user->id);
+
+    $response = $this->get(route('supplier-payments.withholding-certificate', $payment->id));
+    $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    expect(str_starts_with((string) $response->getContent(), '%PDF'))->toBeTrue();
+
+    $withoutWithholding = createDraftSupplierPaymentForTest($this, ['amount' => '10.000']);
+    spService()->post($withoutWithholding->fresh(), $this->user->id);
+    $this->get(route('supplier-payments.withholding-certificate', $withoutWithholding->id))->assertNotFound();
+});

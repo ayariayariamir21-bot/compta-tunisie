@@ -11,8 +11,12 @@ use App\Services\SupplierService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Nouveau fournisseur')]
 class Create extends Component
 {
     public string $code = '';

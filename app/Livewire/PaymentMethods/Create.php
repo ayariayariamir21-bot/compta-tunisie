@@ -9,8 +9,12 @@ use App\Services\CurrentCompany;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Nouveau moyen de paiement')]
 class Create extends Component
 {
     public string $code = '';

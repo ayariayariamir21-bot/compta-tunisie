@@ -10,8 +10,12 @@ use App\Services\CurrentFiscalYear;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le journal')]
 class Edit extends Component
 {
     public ?Journal $journal = null;

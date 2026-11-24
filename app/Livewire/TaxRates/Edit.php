@@ -9,8 +9,12 @@ use App\Services\CurrentCompany;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le taux de taxe')]
 class Edit extends Component
 {
     public ?TaxRate $taxRate = null;
@@ -53,7 +57,7 @@ class Edit extends Component
         $this->code = $taxRate->code;
         $this->name = $taxRate->name;
         $this->rate = (string) $taxRate->rate;
-        $this->type = $taxRate->type;
+        $this->type = $taxRate->type->value;
         $this->sort_order = $taxRate->sort_order;
         $this->description = $taxRate->description;
         $this->is_active = $taxRate->is_active;

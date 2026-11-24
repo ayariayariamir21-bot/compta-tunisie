@@ -31,6 +31,8 @@ class Edit extends Component
 
     public string $amount = '';
 
+    public string $withholding_rate = '0';
+
     public ?string $reference = null;
 
     public ?string $notes = null;
@@ -71,6 +73,7 @@ class Edit extends Component
         $this->customer_id = $payment->customer_id;
         $this->payment_date = $payment->payment_date->toDateString();
         $this->amount = app(CustomerPaymentService::class)->toDecimal((string) $payment->amount);
+        $this->withholding_rate = (string) $payment->withholding_rate;
         $this->reference = $payment->reference;
         $this->notes = $payment->notes;
 
@@ -209,6 +212,7 @@ class Edit extends Component
         $this->validate([
             'payment_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'min:0.001'],
+            'withholding_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
@@ -217,6 +221,7 @@ class Edit extends Component
             $updated = $service->updateDraft($payment, [
                 'payment_date' => $this->payment_date,
                 'amount' => $this->amount,
+                'withholding_rate' => $this->withholding_rate,
                 'reference' => $this->reference,
                 'notes' => $this->notes,
                 'allocations' => $this->buildAllocationsData(),

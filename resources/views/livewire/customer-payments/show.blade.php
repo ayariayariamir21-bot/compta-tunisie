@@ -42,6 +42,16 @@
                 <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Référence</p>
                 <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ $payment->reference ?? '—' }}</p>
             </div>
+            @if (bccomp((string) $payment->withholding_amount, '0', 3) > 0)
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Retenue à la source ({{ rtrim(rtrim((string) $payment->withholding_rate, '0'), '.') }} %)</p>
+                    <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ number_format((float) $payment->withholding_amount, 3, '.', '') }} {{ $payment->currency }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Net encaissé</p>
+                    <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ number_format((float) bcsub((string) $payment->amount, (string) $payment->withholding_amount, 3), 3, '.', '') }} {{ $payment->currency }}</p>
+                </div>
+            @endif
         </div>
 
         <div class="flux-card">

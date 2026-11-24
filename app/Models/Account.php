@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * Accounts form a tree via the self-referencing parent_id FK.
  * The combination (company_id, fiscal_year_id, code) is unique.
+ *
+ * @property AccountType $account_type
  */
 class Account extends Model
 {

@@ -10,8 +10,12 @@ use App\Services\CurrentFiscalYear;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le compte')]
 class Edit extends Component
 {
     public ?Account $account = null;
@@ -50,7 +54,7 @@ class Edit extends Component
         $this->account = $account;
         $this->code = $account->code;
         $this->name = $account->name;
-        $this->account_type = $account->account_type;
+        $this->account_type = $account->account_type->value;
         $this->parent_id = $account->parent_id;
         $this->description = $account->description ?? '';
         $this->is_active = $account->is_active;

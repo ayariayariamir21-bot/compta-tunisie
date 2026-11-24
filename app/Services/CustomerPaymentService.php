@@ -21,6 +21,7 @@ use App\Models\Invoice;
 use App\Models\Journal;
 use App\Models\PaymentMethod;
 use App\Services\Accounting\CustomerPaymentPostingService;
+use App\Services\Accounting\TunisianTaxService;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use App\Support\Decimal;
@@ -71,7 +72,7 @@ class CustomerPaymentService
     }
 
     /**
-     * @param  array{company_id: int, customer_id: int, fiscal_year_id: int, accounting_period_id: int, payment_method_id: int, journal_id?: int|null, destination_account_id?: int|null, payment_date: string, amount: string, currency?: string|null, reference?: string|null, notes?: string|null, created_by: int, allocations?: array<int, array{invoice_id: int, amount: string}>}  $data
+     * @param  array{company_id: int, customer_id: int, fiscal_year_id: int, accounting_period_id: int, payment_method_id: int, journal_id?: int|null, destination_account_id?: int|null, payment_date: string, amount: string, currency?: string|null, reference?: string|null, notes?: string|null, withholding_rate?: string|null, created_by: int, allocations?: array<int, array{invoice_id: int, amount: string}>}  $data
      *
      * @throws \InvalidArgumentException|\RuntimeException
      */
@@ -120,6 +121,8 @@ class CustomerPaymentService
             throw new \InvalidArgumentException('Le montant du règlement doit être strictement positif.');
         }
 
+        [$data['withholding_rate'], $data['withholding_amount']] = $this->withholding($amount, (string) ($data['withholding_rate'] ?? '0'));
+
         $allocationsData = $data['allocations'] ?? [];
         $this->validateAllocations($companyId, $customer->id, $amount, $allocationsData);
 
@@ -135,6 +138,8 @@ class CustomerPaymentService
                 'payment_number' => $this->generatePaymentNumber($companyId),
                 'payment_date' => $data['payment_date'],
                 'amount' => $amount,
+                'withholding_rate' => $data['withholding_rate'],
+                'withholding_amount' => $data['withholding_amount'],
                 'currency' => $data['currency'] ?? $customer->company->currency ?? 'TND',
                 'reference' => ($data['reference'] ?? null) === '' ? null : ($data['reference'] ?? null),
                 'notes' => ($data['notes'] ?? null) === '' ? null : ($data['notes'] ?? null),
@@ -159,7 +164,7 @@ class CustomerPaymentService
     }
 
     /**
-     * @param  array{payment_date?: string, amount?: string, reference?: string|null, notes?: string|null, allocations?: array<int, array{invoice_id: int, amount: string}>}  $data
+     * @param  array{payment_date?: string, amount?: string, withholding_rate?: string|null, reference?: string|null, notes?: string|null, allocations?: array<int, array{invoice_id: int, amount: string}>}  $data
      *
      * @throws \InvalidArgumentException
      */
@@ -183,6 +188,13 @@ class CustomerPaymentService
                     throw new \InvalidArgumentException('Le montant du règlement doit être strictement positif.');
                 }
                 $updates['amount'] = $amount;
+            }
+
+            if (isset($data['amount']) || isset($data['withholding_rate'])) {
+                [$updates['withholding_rate'], $updates['withholding_amount']] = $this->withholding(
+                    $updates['amount'] ?? Decimal::round((string) $payment->amount),
+                    (string) ($data['withholding_rate'] ?? $payment->withholding_rate),
+                );
             }
 
             foreach (['reference', 'notes'] as $nullableField) {
@@ -856,5 +868,23 @@ class CustomerPaymentService
     private function decimalFromDb(mixed $value): string
     {
         return Decimal::normalize((string) str_replace(',', '', (string) $value));
+    }
+
+    /**
+     * Retenue à la source: validated rate and amount withheld from the gross payment.
+     *
+     * @param  numeric-string  $grossAmount
+     * @return array{0: numeric-string, 1: numeric-string}
+     */
+    private function withholding(string $grossAmount, string $ratePercent): array
+    {
+        $rate = Decimal::round($ratePercent === '' ? '0' : $ratePercent);
+        $withheld = (new TunisianTaxService)->withholdingAmount($grossAmount, $rate);
+
+        if (bccomp($withheld, $grossAmount, 3) >= 0) {
+            throw new \InvalidArgumentException('La retenue à la source doit être inférieure au montant du règlement.');
+        }
+
+        return [$rate, $withheld];
     }
 }

@@ -6,8 +6,12 @@ use App\Models\Customer;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Client')]
 class Show extends Component
 {
     public ?Customer $customer = null;

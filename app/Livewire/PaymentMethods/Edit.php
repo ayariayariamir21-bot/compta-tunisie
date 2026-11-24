@@ -9,8 +9,12 @@ use App\Services\CurrentCompany;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le moyen de paiement')]
 class Edit extends Component
 {
     public ?PaymentMethod $paymentMethod = null;

@@ -8,8 +8,12 @@ use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Nouvelle société')]
 class Create extends Component
 {
     public string $name = '';

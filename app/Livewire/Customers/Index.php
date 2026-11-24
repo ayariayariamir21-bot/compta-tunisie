@@ -8,8 +8,12 @@ use App\Services\CurrentCompany;
 use App\Services\CustomerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Clients')]
 class Index extends Component
 {
     public string $search = '';

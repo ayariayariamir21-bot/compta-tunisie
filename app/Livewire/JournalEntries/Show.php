@@ -7,8 +7,12 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Détail de l\'écriture')]
 class Show extends Component
 {
     public ?JournalEntry $journalEntry = null;

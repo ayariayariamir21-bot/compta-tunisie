@@ -15,8 +15,12 @@ use App\Support\Decimal;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Nouvelle écriture')]
 class Create extends Component
 {
     public ?int $journal_id = null;

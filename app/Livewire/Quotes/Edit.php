@@ -12,8 +12,12 @@ use App\Services\QuoteService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le devis')]
 class Edit extends Component
 {
     public ?int $quoteId = null;

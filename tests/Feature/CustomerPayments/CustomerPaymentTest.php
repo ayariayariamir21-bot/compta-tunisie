@@ -897,3 +897,37 @@ it('forbids non-admin members from managing payments but allows viewing', functi
         ->and($member->can('view', $payment))->toBeTrue()
         ->and($this->user->can('post', $payment))->toBeTrue();
 });
+
+// ---------- Retenue à la source ----------
+
+it('posts a customer payment with withholding: net to bank, withheld to 4421, gross to receivable', function () {
+    $invoice = createPostedInvoiceForPaymentTest($this);
+    $payment = createDraftPaymentForTest($this, [
+        'amount' => '200.000',
+        'withholding_rate' => '1.5',
+        'allocations' => [['invoice_id' => $invoice->id, 'amount' => '200.000']],
+    ]);
+
+    expect((string) $payment->withholding_rate)->toBe('1.500')
+        ->and((string) $payment->withholding_amount)->toBe('3.000');
+
+    $posted = cpService()->post($payment->fresh(), $this->user->id);
+    $lines = $posted->journalEntry->lines()->with('account')->get();
+
+    expect($posted->journalEntry->isBalanced())->toBeTrue()
+        ->and((string) $lines->firstWhere('account_id', $this->account532->id)->debit)->toBe('197.000')
+        ->and((string) $lines->firstWhere('account.code', '4421')->debit)->toBe('3.000')
+        ->and((string) $lines->firstWhere('credit', '!=', '0.000')->credit)->toBe('200.000');
+});
+
+it('recomputes the withholding when the payment amount changes', function () {
+    $payment = createDraftPaymentForTest($this, ['amount' => '1000.000', 'withholding_rate' => '15']);
+
+    $updated = cpService()->updateDraft($payment, ['amount' => '500.000']);
+
+    expect((string) $updated->withholding_amount)->toBe('75.000');
+});
+
+it('rejects a withholding equal to the whole payment', function () {
+    createDraftPaymentForTest($this, ['amount' => '100.000', 'withholding_rate' => '100']);
+})->throws(InvalidArgumentException::class, 'retenue à la source');

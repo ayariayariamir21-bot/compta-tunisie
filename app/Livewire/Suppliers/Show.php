@@ -6,8 +6,12 @@ use App\Models\Supplier;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Fournisseur')]
 class Show extends Component
 {
     public ?Supplier $supplier = null;

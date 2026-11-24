@@ -3,6 +3,7 @@
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\Reports\PdfReportController;
+use App\Http\Controllers\SalesDocumentPdfController;
 use App\Livewire\AuditLogs\Index as AuditLogsIndex;
 use App\Livewire\Backups\Index as BackupsIndex;
 use App\Livewire\Companies\Create;
@@ -216,6 +217,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('quotes/create', App\Livewire\Quotes\Create::class)
         ->name('quotes.create');
+
+    Route::get('quotes/{quoteId}/pdf', [SalesDocumentPdfController::class, 'quote'])
+        ->whereNumber('quoteId')
+        ->name('quotes.pdf');
+
+    Route::get('invoices/{invoiceId}/pdf', [SalesDocumentPdfController::class, 'invoice'])
+        ->whereNumber('invoiceId')
+        ->name('invoices.pdf');
+
+    Route::get('credit-notes/{creditNoteId}/pdf', [SalesDocumentPdfController::class, 'creditNote'])
+        ->whereNumber('creditNoteId')
+        ->name('credit-notes.pdf');
+
+    Route::get('supplier-payments/{supplierPaymentId}/withholding-certificate', [SalesDocumentPdfController::class, 'withholdingCertificate'])
+        ->whereNumber('supplierPaymentId')
+        ->name('supplier-payments.withholding-certificate');
 
     Route::get('quotes/{quoteId}', App\Livewire\Quotes\Show::class)
         ->name('quotes.show');

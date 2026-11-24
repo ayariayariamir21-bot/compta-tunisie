@@ -9,8 +9,12 @@ use App\Services\CurrentCompany;
 use App\Services\QuoteService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Devis')]
 class Index extends Component
 {
     public string $search = '';

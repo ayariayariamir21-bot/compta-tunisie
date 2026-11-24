@@ -10,8 +10,12 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Plan comptable')]
 class Index extends Component
 {
     public string $search = '';

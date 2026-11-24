@@ -8,8 +8,12 @@ use App\Services\Accounting\PaymentMethodService;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Moyens de paiement')]
 class Index extends Component
 {
     public string $search = '';

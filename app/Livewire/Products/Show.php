@@ -6,8 +6,12 @@ use App\Models\Product;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Produit')]
 class Show extends Component
 {
     public ?Product $product = null;

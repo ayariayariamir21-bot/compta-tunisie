@@ -24,6 +24,10 @@
                     <a href="{{ route('credit-notes.create', ['invoice' => $invoice->id]) }}" class="flux-btn-primary" wire:navigate>Créer un avoir</a>
                     <a href="{{ route('customer-payments.create', ['invoice' => $invoice->id]) }}" class="flux-btn-green" wire:navigate>Enregistrer un paiement</a>
                 @endif
+                <a href="{{ route('invoices.pdf', $invoice->id) }}" target="_blank" class="inline-flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">PDF</a>
+                @if ($this->isPosted)
+                    <button wire:click="sendByEmail" wire:confirm="Envoyer cette facture par e-mail au client ?" class="inline-flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Envoyer par e-mail</button>
+                @endif
                 <a href="{{ route('invoices.index') }}" class="text-sm text-flux-600 hover:text-flux-500 dark:text-flux-400" wire:navigate>Retour à la liste</a>
             </div>
         </div>

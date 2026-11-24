@@ -140,13 +140,25 @@ class SupplierPaymentPostingService
                 'credit' => '0.000',
             ]);
 
+            $withheld = $this->decimalFromDb($locked->withholding_amount);
+
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
                 'account_id' => $locked->destination_account_id,
                 'description' => "Règlement {$locked->payment_number} — {$locked->paymentMethod->name}",
                 'debit' => '0.000',
-                'credit' => $this->decimalFromDb($locked->amount),
+                'credit' => bcsub($this->decimalFromDb($locked->amount), $withheld, 3),
             ]);
+
+            if (bccomp($withheld, '0', 3) > 0) {
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'account_id' => (new TunisianTaxService)->systemAccountId($locked->company_id, $locked->fiscal_year_id, TunisianTaxService::WITHHOLDING_PAYABLE),
+                    'description' => "Retenue à la source opérée — Règlement {$locked->payment_number}",
+                    'debit' => '0.000',
+                    'credit' => $withheld,
+                ]);
+            }
 
             if (! $journalEntry->fresh()->isBalanced()) {
                 throw new \RuntimeException('L\'écriture comptable n\'est pas équilibrée.');

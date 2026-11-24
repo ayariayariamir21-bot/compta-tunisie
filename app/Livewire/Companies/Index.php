@@ -8,8 +8,12 @@ use App\Services\CurrentCompany;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Mes entreprises')]
 class Index extends Component
 {
     public function deactivate(Company $company, CurrentCompany $currentCompany): void

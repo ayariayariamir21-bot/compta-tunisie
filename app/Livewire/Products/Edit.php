@@ -12,8 +12,12 @@ use App\Services\ProductService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le produit/service')]
 class Edit extends Component
 {
     public ?Product $product = null;
@@ -61,7 +65,7 @@ class Edit extends Component
         $this->product = $product;
         $this->code = $product->code;
         $this->name = $product->name;
-        $this->type = $product->type;
+        $this->type = $product->type->value;
         $this->description = $product->description;
         $this->unit = $product->unit;
         $this->purchase_price = $product->purchase_price !== null ? (string) $product->purchase_price : null;

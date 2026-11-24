@@ -11,8 +11,12 @@ use App\Services\CustomerService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('Modifier le client')]
 class Edit extends Component
 {
     public ?Customer $customer = null;
@@ -77,7 +81,7 @@ class Edit extends Component
         $this->code = $customer->code;
         $this->name = $customer->name;
         $this->legal_name = $customer->legal_name;
-        $this->customer_type = $customer->customer_type;
+        $this->customer_type = $customer->customer_type->value;
         $this->tax_identifier = $customer->tax_identifier;
         $this->rne = $customer->rne;
         $this->address = $customer->address;

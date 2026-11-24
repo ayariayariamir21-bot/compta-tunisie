@@ -39,6 +39,8 @@ class Create extends Component
 
     public string $amount = '';
 
+    public string $withholding_rate = '0';
+
     public ?string $reference = null;
 
     public ?string $notes = null;
@@ -289,6 +291,7 @@ class Create extends Component
             'journal_id' => ['required', 'integer'],
             'destination_account_id' => ['required', 'integer'],
             'amount' => ['required', 'numeric', 'min:0.001'],
+            'withholding_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
@@ -304,6 +307,7 @@ class Create extends Component
                 'destination_account_id' => (int) $this->destination_account_id,
                 'payment_date' => $this->payment_date,
                 'amount' => $this->amount,
+                'withholding_rate' => $this->withholding_rate,
                 'currency' => $company->currency ?? 'TND',
                 'reference' => $this->reference,
                 'notes' => $this->notes,

@@ -1,6 +1,9 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Règlement {{ $payment->payment_number }}</h1>
+        @if ($payment->status === \App\Enums\SupplierPaymentStatus::POSTED && bccomp((string) $payment->withholding_amount, '0', 3) > 0)
+            <a href="{{ route('supplier-payments.withholding-certificate', $payment->id) }}" target="_blank" class="inline-flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Certificat de retenue (PDF)</a>
+        @endif
         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
             {{ $payment->status->color() }}">
             {{ $payment->status->label() }}
@@ -42,6 +45,16 @@
             <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Référence</p>
             <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ $payment->reference ?? '—' }}</p>
         </div>
+        @if (bccomp((string) $payment->withholding_amount, '0', 3) > 0)
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Retenue à la source ({{ rtrim(rtrim((string) $payment->withholding_rate, '0'), '.') }} %)</p>
+                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ number_format((float) $payment->withholding_amount, 3, '.', '') }} {{ $payment->currency }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Net décaissé</p>
+                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ number_format((float) bcsub((string) $payment->amount, (string) $payment->withholding_amount, 3), 3, '.', '') }} {{ $payment->currency }}</p>
+            </div>
+        @endif
     </div>
 
     <div class="flux-card">

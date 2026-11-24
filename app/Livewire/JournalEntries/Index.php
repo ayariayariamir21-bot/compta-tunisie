@@ -10,9 +10,13 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.app')]
+#[Title('Écritures comptables')]
 class Index extends Component
 {
     use WithPagination;

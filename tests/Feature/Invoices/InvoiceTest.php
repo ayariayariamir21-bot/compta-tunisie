@@ -6,6 +6,7 @@ use App\Enums\QuoteStatus;
 use App\Livewire\Invoices\Create;
 use App\Livewire\Invoices\Edit;
 use App\Livewire\Invoices\Index;
+use App\Mail\SalesDocumentMail;
 use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\Company;
@@ -21,8 +22,10 @@ use App\Models\User;
 use App\Services\Accounting\JournalEntryService;
 use App\Services\InvoiceService;
 use App\Services\QuoteService;
+use App\Services\Reporting\SalesDocumentMailer;
 use App\Services\SalesInvoicePostingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
@@ -1051,4 +1054,59 @@ it('keeps the stamp duty of a posted invoice when settings change later', functi
     $settings->update(['stamp_duty_amount' => '2.000']);
 
     expect((string) $posted->fresh()->stamp_duty)->toBe('1.000');
+});
+
+// ---------- PDF & e-mail ----------
+
+it('downloads the invoice as a PDF for the current company', function () {
+    $posted = app(InvoiceService::class)->post(createDraftForTest($this), $this->user->id);
+
+    $response = $this->actingAs($this->user)
+        ->withSession(['current_company_id' => $this->company->id])
+        ->get(route('invoices.pdf', $posted->id));
+
+    $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    expect(str_starts_with((string) $response->getContent(), '%PDF'))->toBeTrue()
+        ->and($response->headers->get('Content-Disposition'))->toContain('facture-fac-2026-000001.pdf');
+});
+
+it('never serves the PDF of another company invoice', function () {
+    $posted = app(InvoiceService::class)->post(createDraftForTest($this), $this->user->id);
+    $otherCompany = Company::create(['name' => 'Autre', 'currency' => 'TND', 'is_active' => true]);
+    $otherCompany->users()->attach($this->user, ['role' => 'admin', 'is_active' => true]);
+
+    $this->actingAs($this->user)
+        ->withSession(['current_company_id' => $otherCompany->id])
+        ->get(route('invoices.pdf', $posted->id))
+        ->assertNotFound();
+});
+
+it('emails a posted invoice to the customer with the PDF attached', function () {
+    Mail::fake();
+    $this->customer->update(['email' => 'client@example.com']);
+    $posted = app(InvoiceService::class)->post(createDraftForTest($this), $this->user->id);
+
+    $recipient = app(SalesDocumentMailer::class)->sendInvoice($posted);
+
+    expect($recipient)->toBe('client@example.com');
+    Mail::assertSent(SalesDocumentMail::class, function (SalesDocumentMail $mail) use ($posted): bool {
+        return $mail->hasTo('client@example.com')
+            && $mail->documentNumber === $posted->invoice_number
+            && str_starts_with($mail->pdfContent, '%PDF');
+    });
+});
+
+it('refuses to email a draft invoice or a customer without e-mail', function () {
+    Mail::fake();
+    $draft = createDraftForTest($this);
+
+    expect(fn () => app(SalesDocumentMailer::class)->sendInvoice($draft))
+        ->toThrow(InvalidArgumentException::class, 'comptabilisée');
+
+    $this->customer->update(['email' => null]);
+    $posted = app(InvoiceService::class)->post($draft, $this->user->id);
+
+    expect(fn () => app(SalesDocumentMailer::class)->sendInvoice($posted))
+        ->toThrow(InvalidArgumentException::class, 'adresse e-mail');
+    Mail::assertNothingSent();
 });

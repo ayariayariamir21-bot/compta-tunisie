@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\QuoteStatus;
+use App\Livewire\Quotes\Show;
+use App\Mail\SalesDocumentMail;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Customer;
@@ -12,7 +14,10 @@ use App\Models\Supplier;
 use App\Models\TaxRate;
 use App\Models\User;
 use App\Services\QuoteService;
+use App\Services\Reporting\SalesDocumentMailer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -742,4 +747,53 @@ it('admin can manage quotes', function () {
     expect($this->user->can('send', $quote))->toBeTrue();
     expect($this->user->can('view', $quote))->toBeTrue();
     expect($this->user->can('duplicate', $quote))->toBeTrue();
+});
+
+// ---------- Page détail, PDF et e-mail ----------
+
+it('sends a quote from its detail page', function () {
+    $data = makeQuoteData($this->company, $this->customer, $this->product, $this->taxRate);
+    $data['created_by'] = $this->user->id;
+    $quote = (new QuoteService)->createDraft($data);
+
+    $this->actingAs($this->user)->withSession(['current_company_id' => $this->company->id]);
+    session(['current_company_id' => $this->company->id]);
+
+    Livewire::test(Show::class, ['quoteId' => $quote->id])
+        ->assertSee($quote->quote_number)
+        ->call('transitionTo', 'send')
+        ->assertRedirect(route('quotes.show', $quote->id));
+
+    expect($quote->fresh()->status)->toBe(QuoteStatus::SENT);
+});
+
+it('rejects unknown quote transitions from the detail page', function () {
+    $data = makeQuoteData($this->company, $this->customer, $this->product, $this->taxRate);
+    $data['created_by'] = $this->user->id;
+    $quote = (new QuoteService)->createDraft($data);
+
+    $this->actingAs($this->user);
+    session(['current_company_id' => $this->company->id]);
+
+    Livewire::test(Show::class, ['quoteId' => $quote->id])
+        ->call('transitionTo', 'delete')
+        ->assertNotFound();
+});
+
+it('downloads and emails a quote as PDF', function () {
+    Mail::fake();
+    $this->customer->update(['email' => 'devis@example.com']);
+    $data = makeQuoteData($this->company, $this->customer, $this->product, $this->taxRate);
+    $data['created_by'] = $this->user->id;
+    $quote = (new QuoteService)->createDraft($data);
+
+    $this->actingAs($this->user)
+        ->withSession(['current_company_id' => $this->company->id])
+        ->get(route('quotes.pdf', $quote->id))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
+
+    app(SalesDocumentMailer::class)->sendQuote($quote);
+
+    Mail::assertSent(SalesDocumentMail::class, fn ($mail) => $mail->hasTo('devis@example.com'));
 });

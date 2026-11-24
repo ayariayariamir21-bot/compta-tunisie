@@ -5,6 +5,7 @@ namespace App\Livewire\CreditNotes;
 use App\Models\CreditNote;
 use App\Services\CreditNoteService;
 use App\Services\CurrentCompany;
+use App\Services\Reporting\SalesDocumentMailer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
@@ -83,5 +84,21 @@ class Show extends Component
     public function render(): View
     {
         return view('livewire.credit-notes.show');
+    }
+
+    public function sendByEmail(SalesDocumentMailer $mailer): void
+    {
+        if (Auth::user()->cannot('view', $this->creditNote)) {
+            abort(403);
+        }
+
+        try {
+            $recipient = $mailer->sendCreditNote($this->creditNote);
+            session()->flash('success', "L'avoir « {$this->creditNote->credit_note_number} » a été envoyé à {$recipient}.");
+        } catch (\InvalidArgumentException $e) {
+            session()->flash('error', $e->getMessage());
+        }
+
+        $this->redirect(route('credit-notes.show', $this->creditNote->id), navigate: true);
     }
 }

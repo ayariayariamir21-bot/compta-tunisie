@@ -11,6 +11,12 @@
                     @endif
                 </p>
             </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('credit-notes.pdf', $creditNote->id) }}" target="_blank" class="inline-flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">PDF</a>
+                @if ($creditNote->status === \App\Enums\CreditNoteStatus::POSTED)
+                    <button wire:click="sendByEmail" wire:confirm="Envoyer cet avoir par e-mail au client ?" class="inline-flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Envoyer par e-mail</button>
+                @endif
+            </div>
             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                 {{ match($creditNote->status) {
                     \App\Enums\CreditNoteStatus::DRAFT => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',

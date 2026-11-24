@@ -68,6 +68,9 @@
                     <flux:input wire:model="amount" type="number" step="0.001" min="0.001" label="Montant du règlement" required />
                 </div>
                 <div>
+                    <flux:input wire:model="withholding_rate" type="number" step="0.001" min="0" max="100" label="Retenue à la source (%)" description="Ex. 1,5 % ou 15 % selon la nature du règlement. Le montant net encaissé/décaissé est diminué de la retenue." />
+                </div>
+                <div>
                     <flux:input wire:model="reference" label="Référence" placeholder="N° de chèque, virement..." />
                 </div>
                 <div class="sm:col-span-2">
