@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\QuoteStatus;
+use App\Livewire\Quotes\Create;
 use App\Livewire\Quotes\Show;
 use App\Mail\SalesDocumentMail;
 use App\Models\Account;
@@ -796,4 +797,26 @@ it('downloads and emails a quote as PDF', function () {
     app(SalesDocumentMailer::class)->sendQuote($quote);
 
     Mail::assertSent(SalesDocumentMail::class, fn ($mail) => $mail->hasTo('devis@example.com'));
+});
+
+it('creates a quote through the form after several interactions', function () {
+    $this->actingAs($this->user);
+    session(['current_company_id' => $this->company->id]);
+
+    Livewire::test(Create::class)
+        ->assertCount('lines', 1)
+        ->set('customer_id', $this->customer->id)
+        ->set('quote_date', '2026-03-10')
+        ->set('lines.0.product_id', $this->product->id)
+        ->call('onProductSelect', 0, $this->product->id)
+        ->set('lines.0.quantity', '2')
+        ->assertCount('lines', 1)
+        ->assertSet('quote_date', '2026-03-10')
+        ->call('store')
+        ->assertHasNoErrors();
+
+    $quote = Quote::where('company_id', $this->company->id)->latest('id')->firstOrFail();
+
+    expect($quote->lines)->toHaveCount(1)
+        ->and($quote->quote_date->toDateString())->toBe('2026-03-10');
 });

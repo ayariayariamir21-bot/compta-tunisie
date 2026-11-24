@@ -3,6 +3,7 @@
 namespace App\Livewire\Invoices;
 
 use App\Enums\InvoiceStatus;
+use App\Models\CompanyAccountingSetting;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Journal;
@@ -46,10 +47,19 @@ class Create extends Component
 
     private int $lineCounter = 0;
 
-    public function boot(): void
+    /**
+     * Initial form state. Runs once (boot() runs on every request and would
+     * add an empty line and reset the date at each interaction).
+     */
+    public function mount(): void
     {
         $this->invoice_date = now()->toDateString();
         $this->addLine();
+
+        $company = app(CurrentCompany::class)->get(Auth::user());
+        if ($company !== null) {
+            $this->journal_id = CompanyAccountingSetting::where('company_id', $company->id)->value('default_sales_journal_id');
+        }
     }
 
     /** @return array<string, list<string|ValidationRule>> */

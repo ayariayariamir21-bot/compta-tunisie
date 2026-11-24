@@ -41,7 +41,11 @@ class Create extends Component
 
     private int $lineCounter = 0;
 
-    public function boot(): void
+    /**
+     * Initial form state. Runs once (boot() runs on every request and would
+     * add an empty line and reset the date at each interaction).
+     */
+    public function mount(): void
     {
         $this->quote_date = now()->toDateString();
         $this->addLine();

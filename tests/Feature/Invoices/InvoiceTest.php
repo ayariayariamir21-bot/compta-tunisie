@@ -1156,3 +1156,31 @@ it('refuses to email a draft invoice or a customer without e-mail', function () 
         ->toThrow(InvalidArgumentException::class, 'adresse e-mail');
     Mail::assertNothingSent();
 });
+
+// ---------- Formulaire de création (interactions réelles) ----------
+
+it('creates an invoice through the form after several interactions', function () {
+    $this->actingAs($this->user);
+    session(['current_company_id' => $this->company->id, 'current_fiscal_year_id' => $this->fiscalYear->id, 'current_accounting_period_id' => $this->period->id]);
+    CompanyAccountingSetting::create(['company_id' => $this->company->id, 'default_sales_journal_id' => $this->journal->id]);
+
+    $component = Livewire::test(Create::class)
+        ->assertSet('journal_id', $this->journal->id)
+        ->assertCount('lines', 1)
+        ->set('customer_id', $this->customer->id)
+        ->set('invoice_date', '2026-01-20')
+        ->set('lines.0.product_id', $this->product->id)
+        ->call('onProductSelect', 0, $this->product->id)
+        ->set('lines.0.quantity', '3')
+        ->assertCount('lines', 1)
+        ->assertSet('invoice_date', '2026-01-20')
+        ->assertSet('lines.0.unit_price', '25.000')
+        ->call('store')
+        ->assertHasNoErrors();
+
+    $invoice = Invoice::where('company_id', $this->company->id)->latest('id')->firstOrFail();
+
+    expect($invoice->lines)->toHaveCount(1)
+        ->and($invoice->invoice_date->toDateString())->toBe('2026-01-20')
+        ->and((string) $invoice->lines->first()->quantity)->toBe('3.000');
+});
