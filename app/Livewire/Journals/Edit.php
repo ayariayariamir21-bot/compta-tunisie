@@ -9,6 +9,7 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -60,7 +61,7 @@ class Edit extends Component
         return [
             'code' => ['required', 'string', 'max:10'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'enum:'.JournalType::class],
+            'type' => ['required', Rule::enum(JournalType::class)],
             'is_active' => ['boolean'],
         ];
     }

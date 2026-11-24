@@ -10,6 +10,7 @@ use App\Services\CurrentFiscalYear;
 use App\Services\SupplierService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -68,7 +69,7 @@ class Create extends Component
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:255'],
             'legal_name' => ['nullable', 'string', 'max:255'],
-            'supplier_type' => ['required', 'enum:'.SupplierType::class],
+            'supplier_type' => ['required', Rule::enum(SupplierType::class)],
             'tax_identifier' => ['nullable', 'string', 'max:50'],
             'rne' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:255'],

@@ -8,6 +8,7 @@ use App\Services\Accounting\PaymentMethodService;
 use App\Services\CurrentCompany;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -21,7 +22,7 @@ class Create extends Component
 
     public string $name = '';
 
-    public ?PaymentMethodType $type = null;
+    public ?string $type = null;
 
     public int $sort_order = 0;
 
@@ -37,7 +38,7 @@ class Create extends Component
         return [
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'enum:'.PaymentMethodType::class],
+            'type' => ['required', Rule::enum(PaymentMethodType::class)],
             'sort_order' => ['required', 'integer', 'min:0'],
             'description' => ['nullable', 'string', 'max:255'],
             'is_active' => ['boolean'],

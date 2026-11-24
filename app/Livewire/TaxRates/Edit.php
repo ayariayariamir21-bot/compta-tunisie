@@ -8,6 +8,7 @@ use App\Services\Accounting\TaxRateService;
 use App\Services\CurrentCompany;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -71,7 +72,7 @@ class Edit extends Component
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:255'],
             'rate' => ['required', 'numeric', 'min:0', 'max:100'],
-            'type' => ['required', 'enum:'.TaxType::class],
+            'type' => ['required', Rule::enum(TaxType::class)],
             'sort_order' => ['required', 'integer', 'min:0'],
             'description' => ['nullable', 'string', 'max:255'],
             'is_active' => ['boolean'],

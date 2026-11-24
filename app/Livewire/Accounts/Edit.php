@@ -9,6 +9,7 @@ use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -66,7 +67,7 @@ class Edit extends Component
         return [
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:255'],
-            'account_type' => ['required', 'enum:'.AccountType::class],
+            'account_type' => ['required', Rule::enum(AccountType::class)],
             'parent_id' => ['nullable', 'integer'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],

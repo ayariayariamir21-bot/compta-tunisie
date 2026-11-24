@@ -11,6 +11,7 @@ use App\Services\CurrentFiscalYear;
 use App\Services\ProductService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -54,7 +55,7 @@ class Create extends Component
         return [
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'enum:'.ProductType::class],
+            'type' => ['required', Rule::enum(ProductType::class)],
             'description' => ['nullable', 'string', 'max:5000'],
             'unit' => ['required', 'string', 'max:50'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
