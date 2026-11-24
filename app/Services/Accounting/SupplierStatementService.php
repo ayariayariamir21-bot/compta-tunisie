@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\PurchaseInvoiceStatus;
@@ -8,6 +10,7 @@ use App\Models\Company;
 use App\Models\PurchaseInvoice;
 use App\Models\Supplier;
 use App\Models\SupplierPayment;
+use App\Support\Decimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
@@ -431,11 +434,7 @@ class SupplierStatementService
      */
     private function decimalFromDb(int|float|string|null $value): string
     {
-        if ($value === null || $value === '') {
-            return '0.000';
-        }
-
-        return number_format((float) $value, 3, '.', '');
+        return Decimal::round($value);
     }
 
     /**
@@ -443,7 +442,7 @@ class SupplierStatementService
      *
      * @return numeric-string
      */
-    private function normalizeDecimal(string|int|float|null $value): string
+    private function normalizeDecimal(string|int|null $value): string
     {
         if ($value === null || $value === '') {
             return '0.000';
@@ -451,6 +450,6 @@ class SupplierStatementService
 
         $numVal = is_numeric((string) $value) ? (string) $value : '0.000';
 
-        return number_format((float) $numVal, 3, '.', '');
+        return Decimal::normalize((string) $numVal);
     }
 }

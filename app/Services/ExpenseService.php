@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\AccountType;
@@ -18,6 +20,7 @@ use App\Models\TaxRate;
 use App\Services\Accounting\ExpensePostingService;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -472,6 +475,6 @@ class ExpenseService
             return '0';
         }
 
-        return number_format((float) $normalized, 3, '.', '');
+        return Decimal::normalize((string) $normalized);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\QuoteStatus;
@@ -8,6 +10,7 @@ use App\Models\Product;
 use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Models\TaxRate;
+use App\Support\Decimal;
 use Illuminate\Support\Facades\DB;
 
 class QuoteService
@@ -119,11 +122,16 @@ class QuoteService
     {
         $originalLines = $quote->lines()->with('product', 'taxRate')->get();
 
+        $quoteDate = now()->startOfDay();
+        $validUntil = $quote->valid_until === null
+            ? null
+            : $quoteDate->copy()->addDays((int) $quote->quote_date->diffInDays($quote->valid_until))->toDateString();
+
         $newData = [
             'company_id' => $quote->company_id,
             'customer_id' => $quote->customer_id,
-            'quote_date' => now()->toDateString(),
-            'valid_until' => $quote->valid_until,
+            'quote_date' => $quoteDate->toDateString(),
+            'valid_until' => $validUntil,
             'currency' => $quote->currency,
             'payment_terms_days' => $quote->payment_terms_days,
             'notes' => $quote->notes,
@@ -377,6 +385,6 @@ class QuoteService
             return '0';
         }
 
-        return number_format((float) $normalized, 3, '.', '');
+        return Decimal::normalize((string) $normalized);
     }
 }

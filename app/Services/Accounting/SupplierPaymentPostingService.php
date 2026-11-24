@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\AuditAction;
@@ -18,6 +20,7 @@ use App\Models\SupplierPayment;
 use App\Notifications\BusinessNotification;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\NotificationService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -325,6 +328,6 @@ class SupplierPaymentPostingService
      */
     private function decimalFromDb(mixed $value): string
     {
-        return number_format((float) str_replace(',', '', (string) $value), 3, '.', '');
+        return Decimal::normalize((string) str_replace(',', '', (string) $value));
     }
 }

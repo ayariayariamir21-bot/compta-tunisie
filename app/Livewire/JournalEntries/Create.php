@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\JournalEntries;
 
 use App\Models\Account;
@@ -9,6 +11,7 @@ use App\Services\Accounting\JournalEntryService;
 use App\Services\CurrentAccountingPeriod;
 use App\Services\CurrentCompany;
 use App\Services\CurrentFiscalYear;
+use App\Support\Decimal;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -95,7 +98,7 @@ class Create extends Component
         $total = '0.000';
         foreach ($this->lines as $line) {
             $debit = $line['debit'] !== '' ? $line['debit'] : '0';
-            $total = bcadd($total, is_numeric($debit) ? number_format((float) $debit, 3, '.', '') : '0.000', 3);
+            $total = bcadd($total, is_numeric($debit) ? Decimal::normalize((string) $debit) : '0.000', 3);
         }
 
         return $total;
@@ -107,7 +110,7 @@ class Create extends Component
         $total = '0.000';
         foreach ($this->lines as $line) {
             $credit = $line['credit'] !== '' ? $line['credit'] : '0';
-            $total = bcadd($total, is_numeric($credit) ? number_format((float) $credit, 3, '.', '') : '0.000', 3);
+            $total = bcadd($total, is_numeric($credit) ? Decimal::normalize((string) $credit) : '0.000', 3);
         }
 
         return $total;

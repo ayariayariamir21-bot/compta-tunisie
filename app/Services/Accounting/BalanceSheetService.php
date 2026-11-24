@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
@@ -261,8 +264,8 @@ class BalanceSheetService
 
         foreach ($rows as $row) {
             $net = bcsub(
-                number_format((float) $row->total_debit, 3, '.', ''),
-                number_format((float) $row->total_credit, 3, '.', ''),
+                Decimal::normalize((string) $row->total_debit),
+                Decimal::normalize((string) $row->total_credit),
                 3,
             );
 

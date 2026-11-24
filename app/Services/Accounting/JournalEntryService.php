@@ -14,6 +14,7 @@ use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\Security\AuditLogService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -27,30 +28,6 @@ class JournalEntryService
     private function audits(): AuditLogService
     {
         return $this->auditLog ?? new AuditLogService;
-    }
-
-    /**
-     * Normalize a value to a numeric string with 3 decimal places.
-     *
-     *
-     * @return numeric-string
-     */
-    private function normalizeDecimal(string|int|null $value): string
-    {
-        $value = trim((string) ($value ?? '0'));
-
-        if (! preg_match('/^-?\d+(?:\.\d{1,3})?$/', $value)) {
-            throw new \InvalidArgumentException('Montant décimal invalide.');
-        }
-
-        $isNegative = str_starts_with($value, '-');
-        $unsignedValue = ltrim($value, '-');
-        [$integerPart, $fractionalPart] = array_pad(explode('.', $unsignedValue, 2), 2, '');
-
-        return ($isNegative ? '-' : '')
-            .$integerPart
-            .'.'
-            .str_pad($fractionalPart, 3, '0');
     }
 
     /**
@@ -339,8 +316,8 @@ class JournalEntryService
                 throw new \InvalidArgumentException("Le compte de la ligne {$num} est inactif.");
             }
 
-            $debit = $this->normalizeDecimal($line['debit']);
-            $credit = $this->normalizeDecimal($line['credit']);
+            $debit = Decimal::normalize($line['debit']);
+            $credit = Decimal::normalize($line['credit']);
 
             if (bccomp($debit, '0.000', 3) < 0 || bccomp($credit, '0.000', 3) < 0) {
                 throw new \InvalidArgumentException("Les montants de la ligne {$num} doivent être positifs.");
@@ -366,8 +343,8 @@ class JournalEntryService
     public function validateLineRules($lines): void
     {
         foreach ($lines as $line) {
-            $debit = $this->normalizeDecimal($line->debit);
-            $credit = $this->normalizeDecimal($line->credit);
+            $debit = Decimal::normalize($line->debit);
+            $credit = Decimal::normalize($line->credit);
 
             if (bccomp($debit, '0.000', 3) < 0 || bccomp($credit, '0.000', 3) < 0) {
                 throw new \InvalidArgumentException('Les montants doivent être positifs.');
@@ -396,8 +373,8 @@ class JournalEntryService
         $totalCredit = '0.000';
 
         foreach ($lines as $line) {
-            $totalDebit = bcadd($totalDebit, $this->normalizeDecimal($line->debit), 3);
-            $totalCredit = bcadd($totalCredit, $this->normalizeDecimal($line->credit), 3);
+            $totalDebit = bcadd($totalDebit, Decimal::normalize($line->debit), 3);
+            $totalCredit = bcadd($totalCredit, Decimal::normalize($line->credit), 3);
         }
 
         if (bccomp($totalDebit, $totalCredit, 3) !== 0) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\AuditAction;
@@ -16,6 +18,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\Accounting\JournalEntryService;
 use App\Services\Security\AuditLogService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -288,6 +291,6 @@ class SalesCreditNotePostingService
      */
     private function decimalFromDb(mixed $value): string
     {
-        return number_format((float) str_replace(',', '', (string) $value), 3, '.', '');
+        return Decimal::normalize((string) str_replace(',', '', (string) $value));
     }
 }

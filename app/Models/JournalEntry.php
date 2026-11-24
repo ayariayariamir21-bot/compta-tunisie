@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
+use App\Support\Decimal;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -102,7 +103,7 @@ class JournalEntry extends Model
     {
         $total = '0.000';
         foreach ($this->lines as $line) {
-            $total = bcadd($total, (string) $line->debit, 3);
+            $total = bcadd($total, Decimal::normalize((string) $line->debit), 3);
         }
 
         return $total;
@@ -113,7 +114,7 @@ class JournalEntry extends Model
     {
         $total = '0.000';
         foreach ($this->lines as $line) {
-            $total = bcadd($total, (string) $line->credit, 3);
+            $total = bcadd($total, Decimal::normalize((string) $line->credit), 3);
         }
 
         return $total;

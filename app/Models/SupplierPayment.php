@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\SupplierPaymentStatus;
+use App\Support\Decimal;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -150,9 +153,12 @@ class SupplierPayment extends Model
     /** @return numeric-string */
     public function allocatedAmount(): string
     {
-        $allocated = $this->allocations->sum('amount');
+        $allocated = '0.000';
+        foreach ($this->allocations as $allocation) {
+            $allocated = bcadd($allocated, Decimal::normalize((string) $allocation->amount), 3);
+        }
 
-        return number_format((float) str_replace(',', '', (string) $allocated), 3, '.', '');
+        return $allocated;
     }
 
     /** @return numeric-string */

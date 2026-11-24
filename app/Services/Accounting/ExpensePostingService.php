@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\AuditAction;
@@ -33,6 +35,8 @@ class ExpensePostingService
     public function post(Expense $expense, int $userId): Expense
     {
         return DB::transaction(function () use ($expense, $userId) {
+            Expense::query()->whereKey($expense->getKey())->lockForUpdate()->firstOrFail();
+            $expense->refresh();
             $expense->load(['lines.expenseAccount', 'lines.taxRate', 'supplier', 'paymentMethod', 'fiscalYear', 'accountingPeriod', 'journal']);
 
             $this->validatePreconditions($expense);

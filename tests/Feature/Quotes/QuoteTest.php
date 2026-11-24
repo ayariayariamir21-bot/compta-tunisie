@@ -490,6 +490,22 @@ it('duplicate quote creates new draft with new number', function () {
     expect($duplicate->status)->toBe(QuoteStatus::DRAFT);
     expect($duplicate->customer_id)->toBe($this->customer->id);
     expect($duplicate->lines)->toHaveCount(1);
+    expect($duplicate->quote_date->toDateString())->toBe(now()->toDateString());
+    expect($duplicate->valid_until->toDateString())->toBe(now()->addDays(31)->toDateString());
+});
+
+it('duplicate of an expired quote keeps the same validity duration from today', function () {
+    $this->travelTo('2027-03-15');
+
+    $service = new QuoteService;
+    $data = makeQuoteData($this->company, $this->customer, $this->product, $this->taxRate);
+    $data['created_by'] = $this->user->id;
+
+    $original = $service->createDraft($data);
+    $duplicate = $service->duplicate($original);
+
+    expect($duplicate->quote_date->toDateString())->toBe('2027-03-15');
+    expect($duplicate->valid_until->toDateString())->toBe('2027-04-15');
 });
 
 it('allows search by quote number', function () {

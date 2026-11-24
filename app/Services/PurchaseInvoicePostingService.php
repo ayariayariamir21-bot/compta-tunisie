@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\AuditAction;
@@ -43,6 +45,8 @@ class PurchaseInvoicePostingService
     public function post(PurchaseInvoice $invoice, int $userId): PurchaseInvoice
     {
         $posted = DB::transaction(function () use ($invoice, $userId) {
+            PurchaseInvoice::query()->whereKey($invoice->getKey())->lockForUpdate()->firstOrFail();
+            $invoice->refresh();
             $invoice->load(['lines.product', 'lines.taxRate', 'supplier', 'fiscalYear', 'accountingPeriod', 'journal']);
 
             $this->validatePreconditions($invoice);

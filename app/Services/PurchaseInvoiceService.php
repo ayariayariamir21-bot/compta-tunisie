@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\AuditAction;
@@ -17,6 +19,7 @@ use App\Models\Supplier;
 use App\Models\TaxRate;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -505,6 +508,6 @@ class PurchaseInvoiceService
             return '0';
         }
 
-        return number_format((float) $normalized, 3, '.', '');
+        return Decimal::normalize((string) $normalized);
     }
 }

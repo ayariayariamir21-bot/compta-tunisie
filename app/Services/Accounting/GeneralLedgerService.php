@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\JournalEntryStatus;
@@ -8,6 +10,7 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Journal;
 use App\Models\JournalEntryLine;
+use App\Support\Decimal;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +23,7 @@ class GeneralLedgerService
      *
      * @return numeric-string
      */
-    private function normalizeDecimal(string|int|float|null $value): string
+    private function normalizeDecimal(string|int|null $value): string
     {
         if ($value === null || $value === '') {
             return '0.000';
@@ -28,7 +31,7 @@ class GeneralLedgerService
 
         $numVal = is_numeric($value) ? (string) $value : '0.000';
 
-        return number_format((float) $numVal, 3, '.', '');
+        return Decimal::normalize((string) $numVal);
     }
 
     /**
@@ -137,8 +140,8 @@ class GeneralLedgerService
             ->where('journal_entries.entry_date', '<', $fromDate)
             ->first();
 
-        $debit = number_format((float) ($result->total_debit ?? 0), 3, '.', '');
-        $credit = number_format((float) ($result->total_credit ?? 0), 3, '.', '');
+        $debit = Decimal::normalize((string) ($result->total_debit ?? 0));
+        $credit = Decimal::normalize((string) ($result->total_credit ?? 0));
 
         return bcsub($debit, $credit, 3);
     }
@@ -200,8 +203,8 @@ class GeneralLedgerService
 
         $result = $query->first();
 
-        $debit = number_format((float) ($result->total_debit ?? 0), 3, '.', '');
-        $credit = number_format((float) ($result->total_credit ?? 0), 3, '.', '');
+        $debit = Decimal::normalize((string) ($result->total_debit ?? 0));
+        $credit = Decimal::normalize((string) ($result->total_credit ?? 0));
 
         return bcsub($debit, $credit, 3);
     }
@@ -375,8 +378,8 @@ class GeneralLedgerService
         $openings = [];
 
         foreach ($rows as $row) {
-            $debit = number_format((float) $row->total_debit, 3, '.', '');
-            $credit = number_format((float) $row->total_credit, 3, '.', '');
+            $debit = Decimal::normalize((string) $row->total_debit);
+            $credit = Decimal::normalize((string) $row->total_credit);
 
             $openings[(int) $row->account_id] = bcsub($debit, $credit, 3);
         }

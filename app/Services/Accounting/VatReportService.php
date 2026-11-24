@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\TaxType;
@@ -7,6 +9,7 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\TaxRate;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -447,8 +450,8 @@ class VatReportService
 
         foreach ($rows as $row) {
             $totals[(int) $row->account_id] = [
-                'debit' => number_format((float) $row->total_debit, 3, '.', ''),
-                'credit' => number_format((float) $row->total_credit, 3, '.', ''),
+                'debit' => Decimal::normalize((string) $row->total_debit),
+                'credit' => Decimal::normalize((string) $row->total_credit),
             ];
         }
 
@@ -655,9 +658,9 @@ class VatReportService
                     'code' => $rawRow->snapshot_code !== null && (string) $rawRow->snapshot_code !== ''
                         ? (string) $rawRow->snapshot_code
                         : (($rawRow->live_code !== null && (string) $rawRow->live_code !== '') ? (string) $rawRow->live_code : '(sans code)'),
-                    'rate' => number_format((float) ($rawRow->snapshot_rate ?? 0), 3, '.', ''),
-                    'base' => bcmul(number_format((float) $rawRow->base, 3, '.', ''), $sign, 3),
-                    'vat' => bcmul(number_format((float) $rawRow->vat, 3, '.', ''), $sign, 3),
+                    'rate' => Decimal::normalize((string) ($rawRow->snapshot_rate ?? 0)),
+                    'base' => bcmul(Decimal::normalize((string) $rawRow->base), $sign, 3),
+                    'vat' => bcmul(Decimal::normalize((string) $rawRow->vat), $sign, 3),
                     'type' => $rawRow->live_type !== null ? (string) $rawRow->live_type : null,
                 ];
             }

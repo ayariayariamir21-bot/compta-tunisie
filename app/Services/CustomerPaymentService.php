@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\AuditAction;
@@ -21,6 +23,7 @@ use App\Models\PaymentMethod;
 use App\Services\Accounting\CustomerPaymentPostingService;
 use App\Services\Security\AuditLogService;
 use App\Services\Security\AuditLogService as SecurityAuditLogService;
+use App\Support\Decimal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -841,7 +844,7 @@ class CustomerPaymentService
             throw new \InvalidArgumentException('Le montant saisi n\'est pas numérique.');
         }
 
-        return number_format((float) $normalized, 3, '.', '');
+        return Decimal::normalize((string) $normalized);
     }
 
     /**
@@ -852,6 +855,6 @@ class CustomerPaymentService
      */
     private function decimalFromDb(mixed $value): string
     {
-        return number_format((float) str_replace(',', '', (string) $value), 3, '.', '');
+        return Decimal::normalize((string) str_replace(',', '', (string) $value));
     }
 }

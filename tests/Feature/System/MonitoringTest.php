@@ -324,8 +324,10 @@ it('never leaks cross-company data through monitoring output', function () {
 
     actingAs($this->admin);
 
+    config(['database.connections.pgsql.password' => 'pg-secret-should-never-render']);
+
     $html = (string) Livewire::test(MonitoringComponent::class)->html();
 
     expect(str_contains($html, 'Societe Secrete XYZ'))->toBeFalse()
-        ->and(str_contains($html, config('database.connections.pgsql.password', 'no-secret-set')))->toBeFalse();
+        ->and(str_contains($html, 'pg-secret-should-never-render'))->toBeFalse();
 });

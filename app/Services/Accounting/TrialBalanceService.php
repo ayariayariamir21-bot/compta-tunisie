@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\JournalEntryStatus;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Support\Decimal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -92,8 +95,8 @@ class TrialBalanceService
         $results = $query->orderBy('accounts.code')->get();
 
         return $results->map(function ($row) {
-            $debit = number_format((float) $row->total_debit, 3, '.', '');
-            $credit = number_format((float) $row->total_credit, 3, '.', '');
+            $debit = Decimal::normalize((string) $row->total_debit);
+            $credit = Decimal::normalize((string) $row->total_credit);
             $net = bcsub($debit, $credit, 3);
 
             if (bccomp($net, '0.000', 3) > 0) {
@@ -148,8 +151,8 @@ class TrialBalanceService
 
         $result = $query->first();
 
-        $totalDebit = number_format((float) ($result->total_debit ?? 0), 3, '.', '');
-        $totalCredit = number_format((float) ($result->total_credit ?? 0), 3, '.', '');
+        $totalDebit = Decimal::normalize((string) ($result->total_debit ?? 0));
+        $totalCredit = Decimal::normalize((string) ($result->total_credit ?? 0));
 
         $totalNet = bcsub($totalDebit, $totalCredit, 3);
 

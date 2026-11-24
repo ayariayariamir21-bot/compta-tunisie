@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Enums\AuditAction;
@@ -7,6 +9,7 @@ use App\Enums\TaxType;
 use App\Models\Company;
 use App\Models\TaxRate;
 use App\Services\Security\AuditLogService;
+use App\Support\Decimal;
 use Illuminate\Support\Facades\DB;
 
 class TaxRateService
@@ -229,15 +232,15 @@ class TaxRateService
      *
      * @throws \InvalidArgumentException
      */
-    public function validateRate(float|string $rate): void
+    public function validateRate(int|float|string $rate): void
     {
-        $rate = (float) $rate;
+        $rate = Decimal::round($rate);
 
-        if ($rate < 0) {
+        if (bccomp($rate, '0.000', 3) < 0) {
             throw new \InvalidArgumentException('Le taux de taxe ne peut pas être négatif.');
         }
 
-        if ($rate > 100) {
+        if (bccomp($rate, '100.000', 3) > 0) {
             throw new \InvalidArgumentException('Le taux de taxe ne peut pas dépasser 100%.');
         }
     }
