@@ -21,8 +21,7 @@ class CurrentFiscalYear
 
     public function get(User $user): ?FiscalYear
     {
-        $companyId = session('current_company_id');
-        $companyId = is_numeric($companyId) ? (int) $companyId : null;
+        $companyId = $this->companyId($user);
 
         $fiscalYearId = session(self::SESSION_KEY);
         $fiscalYearId = is_numeric($fiscalYearId) ? (int) $fiscalYearId : null;
@@ -51,7 +50,7 @@ class CurrentFiscalYear
 
     public function set(User $user, int $fiscalYearId): bool
     {
-        $companyId = session('current_company_id');
+        $companyId = $this->companyId($user);
 
         if (! $companyId) {
             return false;
@@ -90,16 +89,31 @@ class CurrentFiscalYear
 
     public function fallback(User $user): ?FiscalYear
     {
-        $companyId = session('current_company_id');
+        $companyId = $this->companyId($user);
 
         if (! $companyId) {
             return null;
         }
 
-        return FiscalYear::where('company_id', $companyId)
-            ->where('is_active', true)
-            ->orderBy('start_date', 'desc')
-            ->first();
+        $activeYears = FiscalYear::where('company_id', $companyId)
+            ->where('is_active', true);
+
+        $today = now()->toDateString();
+
+        return (clone $activeYears)
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->first()
+            ?? $activeYears->orderBy('start_date', 'desc')->first();
+    }
+
+    /**
+     * The company the user is working in: the one selected in session, or the
+     * default company shown in the switcher when nothing was selected yet.
+     */
+    private function companyId(User $user): ?int
+    {
+        return app(CurrentCompany::class)->get($user)?->id;
     }
 
     /**

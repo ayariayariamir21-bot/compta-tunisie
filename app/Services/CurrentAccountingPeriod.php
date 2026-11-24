@@ -23,11 +23,8 @@ class CurrentAccountingPeriod
 
     public function get(User $user): ?AccountingPeriod
     {
-        $companyId = session('current_company_id');
-        $companyId = is_numeric($companyId) ? (int) $companyId : null;
-
-        $fiscalYearId = session('current_fiscal_year_id');
-        $fiscalYearId = is_numeric($fiscalYearId) ? (int) $fiscalYearId : null;
+        $companyId = $this->companyId($user);
+        $fiscalYearId = $this->fiscalYearId($user);
 
         $periodId = session(self::SESSION_KEY);
         $periodId = is_numeric($periodId) ? (int) $periodId : null;
@@ -56,8 +53,8 @@ class CurrentAccountingPeriod
 
     public function set(User $user, int $periodId): bool
     {
-        $companyId = session('current_company_id');
-        $fiscalYearId = session('current_fiscal_year_id');
+        $companyId = $this->companyId($user);
+        $fiscalYearId = $this->fiscalYearId($user);
 
         if (! $companyId || ! $fiscalYearId) {
             return false;
@@ -92,8 +89,8 @@ class CurrentAccountingPeriod
 
     public function fallback(User $user): ?AccountingPeriod
     {
-        $companyId = session('current_company_id');
-        $fiscalYearId = session('current_fiscal_year_id');
+        $companyId = $this->companyId($user);
+        $fiscalYearId = $this->fiscalYearId($user);
 
         if (! $companyId || ! $fiscalYearId) {
             return null;
@@ -108,10 +105,32 @@ class CurrentAccountingPeriod
             return null;
         }
 
-        return AccountingPeriod::where('fiscal_year_id', $fiscalYearId)
-            ->where('is_open', true)
-            ->orderBy('start_date', 'desc')
-            ->first();
+        $openPeriods = AccountingPeriod::where('fiscal_year_id', $fiscalYearId)
+            ->where('is_open', true);
+
+        $today = now()->toDateString();
+
+        return (clone $openPeriods)
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->first()
+            ?? $openPeriods->orderBy('start_date', 'desc')->first();
+    }
+
+    /**
+     * Company in use: selected in session, or the switcher's default company.
+     */
+    private function companyId(User $user): ?int
+    {
+        return app(CurrentCompany::class)->get($user)?->id;
+    }
+
+    /**
+     * Fiscal year in use: selected in session, or the current company's default year.
+     */
+    private function fiscalYearId(User $user): ?int
+    {
+        return app(CurrentFiscalYear::class)->get($user)?->id;
     }
 
     /**
