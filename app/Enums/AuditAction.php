@@ -26,6 +26,7 @@ enum AuditAction: string
     case MemberActivated = 'member_activated';
     case MemberDeactivated = 'member_deactivated';
     case MemberRemoved = 'member_removed';
+    case MemberAdded = 'member_added';
 
     // Accounting structure
     case FiscalYearCreated = 'fiscal_year_created';
@@ -90,6 +91,7 @@ enum AuditAction: string
             self::MemberActivated => 'Membre réactivé',
             self::MemberDeactivated => 'Membre désactivé',
             self::MemberRemoved => 'Membre retiré',
+            self::MemberAdded => 'Membre ajouté',
             self::FiscalYearCreated => 'Exercice créé',
             self::FiscalYearUpdated => 'Exercice modifié',
             self::FiscalYearClosed => 'Exercice clôturé',
@@ -143,7 +145,7 @@ enum AuditAction: string
         return match ($this) {
             self::Login, self::LoginFailed, self::Logout, self::TwoFactorEnabled, self::TwoFactorDisabled,
             self::CompanyCreated, self::CompanyUpdated, self::CompanyActivated, self::CompanyDeactivated,
-            self::RoleChanged, self::MemberActivated, self::MemberDeactivated, self::MemberRemoved,
+            self::RoleChanged, self::MemberActivated, self::MemberDeactivated, self::MemberRemoved, self::MemberAdded,
             self::BackupCreated, self::BackupValidated, self::BackupDownloaded,
             self::BackupRestoreStarted, self::BackupRestoreSucceeded, self::BackupRestoreFailed => true,
             default => false,

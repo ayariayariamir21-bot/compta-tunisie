@@ -23,6 +23,26 @@
         </div>
     @endif
 
+    <form wire:submit="addMember" class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white">Ajouter un membre</h2>
+        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            Si la personne n'a pas encore de compte, il est créé et elle reçoit un e-mail pour choisir son mot de passe.
+        </p>
+
+        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <flux:input wire:model="newMemberName" label="Nom" placeholder="Nom complet" />
+            <flux:input wire:model="newMemberEmail" type="email" label="Adresse e-mail *" placeholder="comptable@exemple.tn" required />
+            <flux:select wire:model="newMemberRole" label="Rôle *">
+                @foreach (\App\Enums\CompanyRole::cases() as $role)
+                    <flux:select.option value="{{ $role->value }}">{{ $role->label() }}</flux:select.option>
+                @endforeach
+            </flux:select>
+            <div class="flex items-end">
+                <flux:button type="submit" variant="primary" class="w-full">Ajouter</flux:button>
+            </div>
+        </div>
+    </form>
+
     <div class="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
         <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
             <thead class="bg-neutral-50 dark:bg-neutral-800">

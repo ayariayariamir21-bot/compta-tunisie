@@ -10,6 +10,9 @@ use App\Models\User;
 use App\Notifications\SecurityNotification;
 use App\Services\Security\AuditLogService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -130,6 +133,74 @@ class CompanyMembershipService
             entityType: 'company',
             entityId: $company->id,
         ));
+    }
+
+    /**
+     * Give a person access to the company with the given role.
+     *
+     * An existing account (matched by e-mail) is attached as-is. Otherwise a
+     * verified account is created with an unusable random password and the
+     * person receives a password reset link to choose their own password.
+     *
+     * @return array{user: User, created: bool}
+     */
+    public function addMember(Company $company, string $name, string $email, CompanyRole $role): array
+    {
+        $email = mb_strtolower(trim($email));
+
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            throw new InvalidArgumentException('Adresse e-mail invalide.');
+        }
+
+        $result = DB::transaction(function () use ($company, $name, $email, $role): array {
+            $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+            $created = false;
+
+            if ($user === null) {
+                if (trim($name) === '') {
+                    throw new InvalidArgumentException('Le nom est obligatoire pour créer un nouvel utilisateur.');
+                }
+
+                $user = new User;
+                $user->forceFill([
+                    'name' => trim($name),
+                    'email' => $email,
+                    'password' => Hash::make(Str::password(40)),
+                    'email_verified_at' => now(),
+                ])->save();
+                $created = true;
+            } elseif (DB::table('company_user')->where('company_id', $company->id)->where('user_id', $user->id)->exists()) {
+                throw new InvalidArgumentException("{$user->email} est déjà membre de cette société.");
+            }
+
+            $company->users()->attach($user->id, ['role' => $role->value, 'is_active' => true]);
+
+            $this->audits()->logAction(
+                AuditAction::MemberAdded,
+                "Membre ajouté : {$user->email} ({$role->label()}).",
+                company: $company,
+                entity: $user,
+                metadata: ['member_email' => $user->email, 'role' => $role->label(), 'account_created' => $created],
+            );
+
+            return ['user' => $user, 'created' => $created];
+        });
+
+        if ($result['created']) {
+            Password::broker()->sendResetLink(['email' => $result['user']->email]);
+        } else {
+            $this->notifications()->notifyUser($result['user'], new SecurityNotification(
+                title: 'Nouvel accès',
+                message: "Vous avez maintenant accès à {$company->name} ({$role->label()}).",
+                severity: NotificationSeverity::Info,
+                dedupKey: "membership_added.{$company->id}.{$result['user']->id}",
+                companyId: $company->id,
+                entityType: 'company',
+                entityId: $company->id,
+            ));
+        }
+
+        return $result;
     }
 
     /**

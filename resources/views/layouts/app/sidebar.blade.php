@@ -139,6 +139,12 @@
 
                 @if ($auditCompany && auth()->user()->can('viewAny', [\App\Models\AuditLog::class, $auditCompany]))
                     <flux:sidebar.group :heading="__('Sécurité')" class="grid">
+                        @if (auth()->user()->can('manageMembers', $auditCompany))
+                            <flux:sidebar.item icon="users" :href="route('companies.members')" :current="request()->routeIs('companies.members')" wire:navigate>
+                                {{ __('Membres') }}
+                            </flux:sidebar.item>
+                        @endif
+
                         <flux:sidebar.item icon="shield-check" :href="route('audit-logs.index')" :current="request()->routeIs('audit-logs.*')" wire:navigate>
                             {{ __('Journal d’audit') }}
                         </flux:sidebar.item>

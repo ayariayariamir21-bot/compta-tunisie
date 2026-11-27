@@ -9,6 +9,7 @@ use App\Services\CompanyMembershipService;
 use App\Services\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Locked;
@@ -22,6 +23,12 @@ class Members extends Component
 
     #[Locked]
     public ?int $companyId = null;
+
+    public string $newMemberName = '';
+
+    public string $newMemberEmail = '';
+
+    public string $newMemberRole = 'accountant';
 
     public function mount(CurrentCompany $currentCompany): void
     {
@@ -83,6 +90,41 @@ class Members extends Component
             $memberships->activate($this->currentCompany(), User::findOrFail($memberId));
 
             session()->flash('success', "L'accès du membre a été restauré.");
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            session()->flash('error', $e->getMessage());
+        }
+
+        $this->loadMembers();
+    }
+
+    public function addMember(CompanyMembershipService $memberships): void
+    {
+        $this->authorizeManagement();
+
+        $validated = $this->validate([
+            'newMemberName' => ['nullable', 'string', 'max:255'],
+            'newMemberEmail' => ['required', 'email', 'max:255'],
+            'newMemberRole' => ['required', Rule::enum(CompanyRole::class)],
+        ], attributes: [
+            'newMemberName' => 'nom',
+            'newMemberEmail' => 'adresse e-mail',
+            'newMemberRole' => 'rôle',
+        ]);
+
+        try {
+            $result = $memberships->addMember(
+                $this->currentCompany(),
+                (string) ($validated['newMemberName'] ?? ''),
+                (string) $validated['newMemberEmail'],
+                CompanyRole::from((string) $validated['newMemberRole']),
+            );
+
+            session()->flash('success', $result['created']
+                ? "Compte créé pour {$result['user']->email} : un e-mail lui permet de choisir son mot de passe."
+                : "{$result['user']->name} a maintenant accès à la société.");
+
+            $this->reset('newMemberName', 'newMemberEmail');
+            $this->newMemberRole = CompanyRole::Accountant->value;
         } catch (InvalidArgumentException|RuntimeException $e) {
             session()->flash('error', $e->getMessage());
         }

@@ -161,7 +161,10 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Public sign-up. Disable in production for a single-client install
+        // (REGISTRATION_ENABLED=false): users are then created by an
+        // administrator (app:create-user, or "Ajouter un membre").
+        ...(env('REGISTRATION_ENABLED', true) ? [Features::registration()] : []),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
