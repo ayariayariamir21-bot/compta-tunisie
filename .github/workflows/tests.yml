@@ -41,4 +41,16 @@ jobs:
         run: npm run build
 
       - name: Run CI Checks
-        run: composer ci:check
+        shell: bash
+        run: |
+          set -o pipefail
+          composer ci:check 2>&1 | tee ci.log
+
+      # Surfaces the end of the log as a job annotation so a failure can be
+      # diagnosed without opening the raw log.
+      - name: Report failure summary
+        if: failure()
+        shell: bash
+        run: |
+          summary=$(tail -n 60 ci.log | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=CI checks failed::${summary}"
