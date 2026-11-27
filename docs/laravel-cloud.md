@@ -56,7 +56,32 @@ BACKUP_PG_RESTORE_BINARY=pg_restore
 TRUSTED_PROXIES=*             # Cloud terminates HTTPS at the edge; "*" is expected here
 ```
 
+Application (Tunisia):
+
+```
+APP_NAME="Compta Tunisie"
+APP_LOCALE=fr
+APP_TIMEZONE=Africa/Tunis
+REGISTRATION_ENABLED=false         # no public sign-up in production
+ACCOUNTING_STAMP_DUTY_DEFAULT=1.000
+MAIL_MAILER=smtp                   # invoices, quotes and password links are e-mailed
+```
+
 Never paste real values into this repository.
+
+## First administrator (after the first deploy)
+
+Public registration is disabled, so create the client's first user from the
+environment's Commands tab:
+
+```sh
+php artisan app:create-user client@domaine.tn "Nom du client"
+```
+
+The command prints a one-time temporary password (or use `--send-reset-link`
+once SMTP works). The user logs in, creates the company (Entreprises), then
+adds colleagues from Sécurité → Membres; new colleagues receive an e-mail to
+choose their password.
 
 ## Build & deploy commands (environment settings)
 
