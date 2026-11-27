@@ -15,7 +15,7 @@ return new class extends Migration
             $table->decimal('amount', 18, 3)->default(0);
             $table->timestamps();
 
-            $table->unique(['customer_payment_id', 'invoice_id']);
+            $table->unique(['customer_payment_id', 'invoice_id'], 'cust_pay_alloc_payment_invoice_unique');
             $table->index('customer_payment_id');
             $table->index('invoice_id');
         });

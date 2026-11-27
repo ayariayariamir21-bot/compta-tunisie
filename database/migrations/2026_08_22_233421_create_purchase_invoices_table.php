@@ -33,7 +33,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['company_id', 'invoice_number']);
-            $table->unique(['company_id', 'supplier_id', 'supplier_invoice_number']);
+            $table->unique(['company_id', 'supplier_id', 'supplier_invoice_number'], 'purchase_invoices_supplier_number_unique');
             $table->index('company_id');
             $table->index('supplier_id');
             $table->index('fiscal_year_id');

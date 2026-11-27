@@ -40,7 +40,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['company_id', 'fiscal_year_id', 'journal_id', 'entry_number']);
+            $table->unique(['company_id', 'fiscal_year_id', 'journal_id', 'entry_number'], 'journal_entries_number_unique');
 
             $table->index(['company_id', 'fiscal_year_id']);
             $table->index(['journal_id']);
