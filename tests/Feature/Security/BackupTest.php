@@ -571,6 +571,14 @@ it('performs a full backup and restore roundtrip on scratch databases', function
         $this->markTestSkipped('Outils PostgreSQL indisponibles : integration ignoree.');
     }
 
+    // CI runners may ship pg_dump without a running PostgreSQL server.
+    $root = backupRootConnection();
+    try {
+        new PDO($root['dsn'], $root['user'], $root['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]);
+    } catch (PDOException) {
+        $this->markTestSkipped('Serveur PostgreSQL injoignable : integration ignoree.');
+    }
+
     $suffix = bin2hex(random_bytes(4));
     $sourceDb = 'compta_backup_src_'.$suffix;
     $targetDb = 'compta_backup_dst_'.$suffix;
